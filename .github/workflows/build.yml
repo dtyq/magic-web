@@ -53,7 +53,7 @@ jobs:
           docker buildx build \    
             --platform linux/amd64,linux/arm64 \
             -t ${{ env.REGISTRY }}/${{ env.WEB_IMAGE }}:${{ inputs.tag || github.ref_name }} \
-            --build-arg IMAGE_NAME=${{ env.REGISTRY }}/${{ env.BASE_IMAGE }} \
+            --build-arg IMAGE_NAME=${{ env.BASE_IMAGE }} \
             -f ./Dockerfile.web \
             --push \
             ./
