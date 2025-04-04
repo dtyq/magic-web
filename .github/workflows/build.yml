@@ -54,6 +54,6 @@ jobs:
             --platform linux/amd64,linux/arm64 \
             -t ${{ env.REGISTRY }}/${{ env.WEB_IMAGE }}:${{ inputs.tag || github.ref_name }} \
             --build-arg IMAGE_NAME=${{ env.REGISTRY }}/${{ env.BASE_IMAGE }} \
-            -f ./Dockerfile \
+            -f ./bin/Dockerfile.web \
             --push \
             ./
