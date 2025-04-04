@@ -21,7 +21,7 @@ on:
 env:
   REGISTRY: ghcr.io
   WEB_IMAGE: dtyq/magic-web
-  BASE_IMAGE: dtyq/php-dockerfile:8.3-alpine-3.21-swow-1.5.3-jsonpath-parle-xlswriter
+  BASE_IMAGE: node:22-alpine
 
 jobs:
   build:
