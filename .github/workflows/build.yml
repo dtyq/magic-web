@@ -21,7 +21,7 @@ on:
 env:
   REGISTRY: ghcr.io
   WEB_IMAGE: dtyq/magic-web
-  BASE_IMAGE: node:22-alpine
+  BASE_IMAGE: dtyq/php-dockerfile:8.3-alpine-3.21-swow-1.5.3-jsonpath-parle-xlswriter
 
 jobs:
   build:
@@ -53,7 +53,7 @@ jobs:
           docker buildx build \    
             --platform linux/amd64,linux/arm64 \
             -t ${{ env.REGISTRY }}/${{ env.WEB_IMAGE }}:${{ inputs.tag || github.ref_name }} \
-            --build-arg IMAGE_NAME=${{ env.BASE_IMAGE }} \
-            -f ./Dockerfile.web \
-            --push .
-            
+            --build-arg IMAGE_NAME=${{ env.REGISTRY }}/${{ env.BASE_IMAGE }} \
+            -f ./Dockerfile \
+            --push \
+            ./
