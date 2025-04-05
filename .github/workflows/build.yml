@@ -49,9 +49,10 @@ jobs:
         if: ${{ inputs.task == 'build' || github.event_name == 'push' }}
         run: |
           # 构建并推送服务镜像
-          docker buildx build \    
+          docker buildx build \
             --platform linux/amd64,linux/arm64 \
             -t ${{ env.REGISTRY }}/${{ env.WEB_IMAGE }}:${{ inputs.tag || github.ref_name }} \
+            --build-arg IMAGE_NAME=${{ env.REGISTRY }}/${{ env.BASE_IMAGE }} \
             -f ./Dockerfile.web \
             --push \
             ./
