@@ -54,4 +54,5 @@ jobs:
             -t ${{ env.REGISTRY }}/${{ env.WEB_IMAGE }}:${{ inputs.tag || github.ref_name }} \
             --build-arg CI_COMMIT_TAG=${{ github.event.release.tag_name }} \
             -f ./Dockerfile.web \
-            --push .
+            --push \
+            ./
