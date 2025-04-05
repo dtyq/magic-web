@@ -55,9 +55,9 @@ export class LoginService {
 	/** 同步当前登录帐号的环境配置 */
 	syncClusterConfig = async () => {
 		try {
-			const { teamshare_login_code } = await this.authApi.getAccountDeployCode()
-			const config = await this.getClusterConfig(teamshare_login_code)
-			return { clusterCode: teamshare_login_code, clusterConfig: config }
+			const { login_code } = await this.authApi.getAccountDeployCode()
+			const config = await this.getClusterConfig(login_code)
+			return { clusterCode: login_code, clusterConfig: config }
 		} catch (error: any) {
 			const newMessage = `deployCodeSyncStep: ${error.message}`
 			const newError = new Error(newMessage)

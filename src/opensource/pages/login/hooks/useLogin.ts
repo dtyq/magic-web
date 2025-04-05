@@ -68,11 +68,11 @@
 // 	/** 当前账号环境编号获取 */
 // 	const deployCodeSyncStep = useMemoizedFn(async () => {
 // 		try {
-// 			const { teamshare_login_code } = await AuthService.getAccountDeployCode()
+// 			const { login_code } = await AuthService.getAccountDeployCode()
 // 			// PrivateDeploymentStore.setState((preState) => {
-// 			// 	preState.currentPrivateDeploymentCode = teamshare_login_code
+// 			// 	preState.currentPrivateDeploymentCode = login_code
 // 			// })
-// 			return teamshare_login_code
+// 			return login_code
 // 		} catch (error: any) {
 // 			const newMessage = `magicOrganizationSyncStep: ${error.message}`
 // 			const newError = new Error(newMessage)

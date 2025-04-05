@@ -371,7 +371,7 @@ export const createContactStore = (uid: string) =>
 							if (alwaysFetch) {
 								const promises = ids.map((id) =>
 									ContactApi.getDepartmentInfo({
-										department_id: id
+										department_id: id,
 									}),
 								)
 								const data = await Promise.all(promises)
@@ -395,7 +395,7 @@ export const createContactStore = (uid: string) =>
 							if (notCacheInfos.length > 0) {
 								const promises = notCacheInfos.map((id) =>
 									ContactApi.getDepartmentInfo({
-										department_id: id
+										department_id: id,
 									}),
 								)
 

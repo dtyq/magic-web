@@ -16,9 +16,9 @@ export const generateContactApi = (fetch: HttpClient) => ({
 	addPropmtFriend(friend_id: string) {
 		return fetch.post<{
 			success: boolean
-		}>(genRequestUrl(RequestUrl.addPropmtFriend, {friendId: friend_id}))
+		}>(genRequestUrl(RequestUrl.addPropmtFriend, { friendId: friend_id }))
 	},
-	
+
 	/**
 	 * 获取好友列表
 	 * @param data
@@ -26,10 +26,10 @@ export const generateContactApi = (fetch: HttpClient) => ({
 	 */
 	getFriends(data: { page_token?: string }) {
 		return fetch.get<PaginationResponse<Friend>>(
-			genRequestUrl(RequestUrl.getFriends, {}, {page_token: data.page_token}),
+			genRequestUrl(RequestUrl.getFriends, {}, { page_token: data.page_token }),
 		)
 	},
-	
+
 	/**
 	 * 获取组织架构
 	 * @param data
@@ -42,7 +42,7 @@ export const generateContactApi = (fetch: HttpClient) => ({
 		return fetch.get<PaginationResponse<StructureItem>>(
 			genRequestUrl(
 				RequestUrl.getOrganization,
-				{id: data.department_id ?? -1},
+				{ id: data.department_id ?? -1 },
 				{
 					sum_type: data.sum_type,
 					page_token: data.page_token,
@@ -50,18 +50,18 @@ export const generateContactApi = (fetch: HttpClient) => ({
 			),
 		)
 	},
-	
+
 	/**
 	 * 获取组织架构成员
 	 * @param data
 	 * @returns
 	 */
 	getOrganizationMembers({
-		                       department_id,
-		                       count = 50,
-		                       page_token = "",
-		                       is_recursive = 0,
-	                       }: {
+		department_id,
+		count = 50,
+		page_token = "",
+		is_recursive = 0,
+	}: {
 		department_id: string
 		count?: number
 		page_token?: string
@@ -70,9 +70,8 @@ export const generateContactApi = (fetch: HttpClient) => ({
 		return fetch.get<PaginationResponse<StructureUserItem>>(
 			genRequestUrl(
 				RequestUrl.getDepartmentUsers,
-				{},
+				{ id: department_id ?? "-1" },
 				{
-					department_id,
 					count,
 					page_token,
 					is_recursive,
@@ -80,7 +79,7 @@ export const generateContactApi = (fetch: HttpClient) => ({
 			),
 		)
 	},
-	
+
 	/**
 	 * 搜索用户
 	 * @param data
@@ -99,7 +98,7 @@ export const generateContactApi = (fetch: HttpClient) => ({
 			),
 		)
 	},
-	
+
 	/**
 	 * 模糊搜索部门列表
 	 * @param data
@@ -123,7 +122,7 @@ export const generateContactApi = (fetch: HttpClient) => ({
 			),
 		)
 	},
-	
+
 	/**
 	 * 根据 IDs 获取所有类型用户信息
 	 * @param data
@@ -141,7 +140,7 @@ export const generateContactApi = (fetch: HttpClient) => ({
 			},
 		)
 	},
-	
+
 	/**
 	 * 根据 IDs 获取所有类型会话信息
 	 * @param data
@@ -153,7 +152,7 @@ export const generateContactApi = (fetch: HttpClient) => ({
 			data,
 		)
 	},
-	
+
 	/**
 	 * 获取用户群组
 	 * @returns
@@ -169,7 +168,7 @@ export const generateContactApi = (fetch: HttpClient) => ({
 			),
 		)
 	},
-	
+
 	/**
 	 * 获取部门信息
 	 * @param data
@@ -177,10 +176,10 @@ export const generateContactApi = (fetch: HttpClient) => ({
 	 */
 	getDepartmentInfo(data: { department_id: string }) {
 		return fetch.get<StructureItem>(
-			genRequestUrl(RequestUrl.getDepartmentInfo, {id: data.department_id}),
+			genRequestUrl(RequestUrl.getDepartmentInfo, { id: data.department_id }),
 		)
 	},
-	
+
 	/**
 	 * 获取用户说明书
 	 * @param data
@@ -189,7 +188,7 @@ export const generateContactApi = (fetch: HttpClient) => ({
 	getUserManual(data: { user_id: string }) {
 		return fetch.post<CommonResponse<string>>(genRequestUrl(RequestUrl.getUserManual), data)
 	},
-	
+
 	/**
 	 * 获取部门说明书
 	 * @param data
@@ -197,10 +196,10 @@ export const generateContactApi = (fetch: HttpClient) => ({
 	 */
 	getDepartmentDocument(data: { department_id: string }) {
 		return fetch.get<CommonResponse<string>>(
-			genRequestUrl(RequestUrl.getDepartmentDocument, {id: data.department_id}),
+			genRequestUrl(RequestUrl.getDepartmentDocument, { id: data.department_id }),
 		)
 	},
-	
+
 	/**
 	 * @description 获取广场提示词
 	 */

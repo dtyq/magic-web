@@ -33,11 +33,17 @@ export const generateBotApi = (fetch: HttpClient) => ({
 
 	/** 获取用户个人机器人 */
 	getUserBotList({ page, pageSize, keyword }: Bot.GetUserBotListParams) {
-		return fetch.post<WithPage<Bot.BotItem[]>>(genRequestUrl(RequestUrl.getUserBotList), {
-			page,
-			page_size: pageSize,
-			robot_name: keyword,
-		})
+		return fetch.get<WithPage<Bot.BotItem[]>>(
+			genRequestUrl(
+				RequestUrl.getUserBotList,
+				{},
+				{
+					page,
+					page_size: pageSize,
+					robot_name: keyword,
+				},
+			),
+		)
 	},
 
 	/** 获取机器人版本列表 */
@@ -57,7 +63,7 @@ export const generateBotApi = (fetch: HttpClient) => ({
 
 	/** 修改机器人状态 */
 	updateBotStatus(agentId: string, status: number) {
-		return fetch.post<null>(genRequestUrl(RequestUrl.updateBotStatus, { agentId }, { status }))
+		return fetch.put<null>(genRequestUrl(RequestUrl.updateBotStatus, { agentId }, { status }))
 	},
 
 	/** 发布机器人 */
@@ -139,12 +145,15 @@ export const generateBotApi = (fetch: HttpClient) => ({
 
 	/** 获取已配置过的第三方平台 */
 	getThirdPartyPlatforms(botId: string) {
-		return fetch.post<WithPage<Bot.ThirdPartyPlatform[]>>(
-			genRequestUrl(RequestUrl.getThirdPartyPlatforms, { botId }),
-			{
-				page: 1,
-				page_size: 10,
-			},
+		return fetch.get<WithPage<Bot.ThirdPartyPlatform[]>>(
+			genRequestUrl(
+				RequestUrl.getThirdPartyPlatforms,
+				{ botId },
+				{
+					page: 1,
+					page_size: 10,
+				},
+			),
 		)
 	},
 })

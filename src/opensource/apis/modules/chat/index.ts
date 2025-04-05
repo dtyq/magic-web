@@ -239,7 +239,7 @@ export const generateChatApi = (fetch: HttpClient, socket: ChatWebSocket) => ({
 	 * @returns
 	 */
 	getTopicList(conversationId: string) {
-		return fetch.get<ConversationTopic[]>(
+		return fetch.post<ConversationTopic[]>(
 			genRequestUrl(RequestUrl.getTopicList, { conversationId }),
 		)
 	},

@@ -237,6 +237,10 @@ class MessagePullService {
 
 			// 步骤 2-1: 拉取用户信息
 			const user_ids = [...users, ...ais].map((u) => u.receive_id)
+
+			// 添加当前用户Id
+			if (userStore.user.userInfo?.user_id) user_ids.push(userStore.user.userInfo?.user_id)
+
 			if (user_ids.length > 0) {
 				await userInfoService.fetchUserInfos(user_ids, 2)
 			}

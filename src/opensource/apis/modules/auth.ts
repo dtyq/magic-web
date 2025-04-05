@@ -44,7 +44,7 @@ export const generateAuthApi = (fetch: HttpClient) => ({
 				RequestUrl.bindMagicAuthorization,
 				{},
 				{
-					teamshare_login_code: authCode || "",
+					login_code: authCode || "",
 					authorization,
 				},
 			),
@@ -63,11 +63,9 @@ export const generateAuthApi = (fetch: HttpClient) => ({
 	 */
 	getAccountDeployCode() {
 		if (!isCommercial()) {
-			return { teamshare_login_code: "" }
+			return { login_code: "" }
 		}
-		return fetch.get<{ teamshare_login_code: string }>(
-			genRequestUrl(RequestUrl.getDeploymentCode),
-		)
+		return fetch.get<{ login_code: string }>(genRequestUrl(RequestUrl.getDeploymentCode))
 	},
 
 	/**

@@ -126,7 +126,7 @@ export const enum RequestUrl {
 	/** 更新 AI助理 快捷指令配置 */
 	updateAiConversationQuickInstructionConfig = "/api/v1/im/conversations/${conversationId}/instructs",
 	/** 获取指定会话下的消息 */
-	getConversationMessages = "/api/v1/im/conversations/${conversationId}/message/queries",
+	getConversationMessages = "/api/v1/im/conversations/${conversationId}/messages/queries",
 
 	/**
 	 * 批量拉取指定会话下的消息
@@ -136,7 +136,7 @@ export const enum RequestUrl {
 	/** 批量拉取指定会话下的多条消息 */
 	batchGetConversationMessagesV2 = "/api/v1/im/conversations/messages/queries",
 	/** 【新版本】查询用户任务列表 */
-	getTaskList = "/api/v1/user/task",
+	getTaskList = "/api/v1/user/task/list",
 	/** 【新版本】创建用户任务 */
 	createTask = "/api/v1/user/task",
 	/** 【新版本】获取用户任务 */
@@ -190,23 +190,23 @@ export const enum RequestUrl {
 
 	/** Flow */
 	/** 获取工作流列表 */
-	getFlowList = "/api/v1/queries",
+	getFlowList = "/api/v1/flows/queries",
 	/** 流程试运行 */
-	testFlow = "/api/v1/${flowId}/flow-debug",
+	testFlow = "/api/v1/flows/${flowId}/flow-debug",
 	/** 新增流程/修改流程 */
-	addOrUpdateFlowBaseInfo = "/api/v1",
+	addOrUpdateFlowBaseInfo = "/api/v1/flows",
 	/** 保存流程详情 */
-	saveFlow = "/api/v1/${flowId}/save-node",
+	saveFlow = "/api/v1/flows/${flowId}/save-node",
 	/** 获取流程详情 */
-	getFlow = "/api/v1/${flowId}",
+	getFlow = "/api/v1/flows/${flowId}",
 	/** 删除流程 */
-	deleteFlow = "/api/v1/${flowId}",
+	deleteFlow = "/api/v1/flows/${flowId}",
 	/** 修改流程启用状态 */
-	changeEnableStatus = "/api/v1/${flowId}/change-enable",
+	changeEnableStatus = "/api/v1/flows/${flowId}/change-enable",
 	/** 单点调试 */
-	testNode = "/api/v1/node-debug",
+	testNode = "/api/v1/flows/node-debug",
 	/** 获取可用 LLM 模型 */
-	getLLMModal = "/api/v1/models",
+	getLLMModal = "/api/v1/flows/models",
 	/** 获取当前用户可绑定的开放平台应用列表 */
 	getOpenPlatformOfMine = "/api/v1/flows/open-platform/applications",
 	/** 给指定工作流添加开放平台应用 */
@@ -216,32 +216,32 @@ export const enum RequestUrl {
 	/** 获取指定工作流绑定的开放平台应用列表 */
 	getOpenApiAccountList = "/api/v1/flows/${flowId}/open-platform/apps/queries",
 	/** 获取子流程的入参和出参 */
-	getSubFlowArgument = "/api/v1/${flowId}/params",
+	getSubFlowArgument = "/api/v1/flows/${flowId}/params",
 	/** 保存流程草稿 */
-	saveFlowDraft = "/api/v1/${flowId}/draft",
+	saveFlowDraft = "/api/v1/flows/${flowId}/draft",
 	/** 获取流程草稿列表 */
-	getFlowDraftList = "/api/v1/${flowId}/draft/queries",
+	getFlowDraftList = "/api/v1/flows/${flowId}/draft/queries",
 	/** 查询流程草稿详情 */
-	getFlowDratDetail = "/api/v1/${flowId}/draft/${draftId}",
+	getFlowDratDetail = "/api/v1/flows/${flowId}/draft/${draftId}",
 	/** 删除流程草稿 */
-	deleteFlowDraft = "/api/v1/${flowId}/draft/${draftId}",
+	deleteFlowDraft = "/api/v1/flows/${flowId}/draft/${draftId}",
 
 	/** 获取工具集列表 */
-	getToolList = "/api/v1/tool-set/queries",
+	getToolList = "/api/v1/flows/tool-set/queries",
 	/** 获取可用的工具集列表 */
-	getUseableToolList = "/api/v1/queries/tool-sets",
+	getUseableToolList = "/api/v1/flows/queries/tool-sets",
 	/** 获取工具集详情 */
-	getTool = "/api/v1/tool-set/${id}",
+	getTool = "/api/v1/flows/tool-set/${id}",
 	/** 保存工具集 */
-	saveTool = "/api/v1/tool-set",
+	saveTool = "/api/v1/flows/tool-set",
 	/** 删除工具集 */
-	deleteTool = "/api/v1/tool-set/${id}",
+	deleteTool = "/api/v1/flows/tool-set/${id}",
 	/** 获取可用的工具列表 */
-	getAvailableTools = "/api/v1/queries/tools",
+	getAvailableTools = "/api/v1/flows/queries/tools",
 	/** 获取函数表达式数据源 */
-	getMethodsDataSource = "/api/v1/expression-data-source",
+	getMethodsDataSource = "/api/v1/flows/expression-data-source",
 	/** 获取可用的知识库列表 */
-	getUseableDatabaseList = "/api/v1/queries/knowledge",
+	getUseableDatabaseList = "/api/v1/flows/queries/knowledge",
 	/** 获取可用的天书知识库列表 */
 	getUseableTeamshareDatabaseList = "/api/v2/magic/external-api/teamshare/knowledge/manageable",
 	/** 获取视觉理解模型数据源 */
@@ -252,13 +252,13 @@ export const enum RequestUrl {
 	createTeamshareKnowledgeVector = "/api/v2/magic/external-api/teamshare/knowledge/start-vector",
 
 	/** 发布流程版本 */
-	publishFlow = "/api/v1/${flowId}/version/publish",
+	publishFlow = "/api/v1/flows/${flowId}/version/publish",
 	/** 回滚流程版本 */
-	restoreFlow = "/api/v1/${flowId}/version/${versionId}/rollback",
+	restoreFlow = "/api/v1/flows/${flowId}/version/${versionId}/rollback",
 	/** 查询版本列表 */
-	getFlowPublishList = "/api/v1/${flowId}/version/queries?page=${page}&page_size=${pageSize}",
+	getFlowPublishList = "/api/v1/flows/${flowId}/version/queries?page=${page}&page_size=${pageSize}",
 	/** 查询版本详情 */
-	getFlowPublishDetail = "/api/v1/${flowId}/version/${versionId}",
+	getFlowPublishDetail = "/api/v1/flows/${flowId}/version/${versionId}",
 
 	/** Knowledge */
 	/** 创建知识库 */
@@ -289,15 +289,15 @@ export const enum RequestUrl {
 	rebuildKnowledge = "/api/v2/magic/knowledge/${id}/rebuild",
 
 	/** 保存 api-key */
-	saveApiKey = "/api/v1/${flowId}/api-key",
+	saveApiKey = "/api/v1/flows/${flowId}/api-key",
 	/** 查询 api-key 列表 */
-	getApiKeyList = "/api/v1/${flowId}/api-key/queries",
+	getApiKeyList = "/api/v1/flows/${flowId}/api-key/queries",
 	/** 查询 api-key 详情 */
-	getApiKeyDetail = "/api/v1/${flowId}/api-key/${id}",
+	getApiKeyDetail = "/api/v1/flows/${flowId}/api-key/${id}",
 	/** 删除 api-key  */
-	deleteApiKey = "/api/v1/${flowId}/api-key/${id}",
+	deleteApiKey = "/api/v1/flows/${flowId}/api-key/${id}",
 	/** 重建 api-key */
-	rebuildApiKey = "/api/v1/${flowId}/api-key/${id}/rebuild",
+	rebuildApiKey = "/api/v1/flows/${flowId}/api-key/${id}/rebuild",
 
 	/** 获取话题列表 */
 	getTopicList = "/api/v1/im/conversations/${conversationId}/topics/queries",
@@ -306,11 +306,11 @@ export const enum RequestUrl {
 	getMagicTopicName = "/api/v1/im/conversations/${conversationId}/topics/${topicId}/name",
 
 	/** 获取数据表 */
-	getFiles = "/api/v1/external-api/teamshare/multi-table/file/queries",
+	getFiles = "/api/v1/flows/external-api/teamshare/multi-table/file/queries",
 	/** 获取数据表 */
-	getSheets = "/api/v1/external-api/teamshare/multi-table/${fileId}/sheets",
+	getSheets = "/api/v1/flows/external-api/teamshare/multi-table/${fileId}/sheets",
 	/** 获取文件详情 */
-	getFile = "/api/v1/external-api/teamshare/multi-table/${fileId}",
+	getFile = "/api/v1/flows/external-api/teamshare/multi-table/${fileId}",
 
 	/** Auth */
 	/** 更新资源授权 */

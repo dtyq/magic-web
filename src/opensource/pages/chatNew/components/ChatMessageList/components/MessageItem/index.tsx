@@ -8,13 +8,15 @@ import type {
 import { ConversationMessageType } from "@/types/chat/conversation_message"
 import { calculateRelativeSize } from "@/utils/styles"
 import { getAvatarUrl } from "@/utils/avatar"
-import MagicMemberAvatar from "@/opensource/components/business/MagicMemberAvatar"
 import { useFontSize } from "@/opensource/providers/AppearanceProvider/hooks"
 import MessageContent from "./components/MessageContent"
 // import MessageStatus from "./components/MessageStatus"
 import MessageSeenStatus from "../MessageSeenStatus"
 import MessageSendStatus from "../MessageSendStatus"
 import useStyles from "./style"
+import MagicAvatar from "@/opensource/components/base/MagicAvatar"
+import MemberCardStore from "@/opensource/stores/display/MemberCardStore"
+import { useMemoizedFn } from "ahooks"
 
 interface MessageItemProps {
 	message_id: string
@@ -45,7 +47,23 @@ const Avatar = memo(
 	}) {
 		// 使用 useMemo 缓存 info 对象，避免每次渲染都创建新对象
 		const info = useMemo(() => ({ name, avatar_url: getAvatarUrl(avatar) }), [name, avatar])
-		return <MagicMemberAvatar src={info.avatar_url} size={size} uid={uid} showPopover />
+
+		const openUserInfo = useMemoizedFn((e: React.MouseEvent<HTMLDivElement>) => {
+			e.stopPropagation()
+			MemberCardStore.openCard(uid, { x: e.clientX, y: e.clientY })
+		})
+
+		return (
+			<MagicAvatar
+				src={info.avatar_url}
+				size={size}
+				onClick={(e) => {
+					openUserInfo(e)
+				}}
+			>
+				{name}
+			</MagicAvatar>
+		)
 	},
 	(prevProps, nextProps) =>
 		prevProps.name === nextProps.name &&
@@ -80,10 +98,7 @@ const MessageItem = memo(function MessageItem({
 	const avatarSize = useMemo(() => calculateRelativeSize(40, fontSize), [fontSize])
 
 	// 使用 useMemo 缓存头像组件
-	const avatarComponent = useMemo(
-		() => <Avatar name={name} avatar={avatar} size={avatarSize} uid={sender_id} />,
-		[name, avatar, avatarSize, sender_id],
-	)
+	const avatarComponent = <Avatar name={name} avatar={avatar} size={avatarSize} uid={sender_id} />
 
 	return (
 		<div
