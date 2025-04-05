@@ -11,9 +11,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
 COPY ./packages ./packages
 
-RUN --mount=type=cache,target=/root/.npm \
-    --mount=type=cache,id=magic-web,target=/app/node_modules/.cache \
-    npm install pnpm --location=global && \
+RUN npm install pnpm --location=global && \
     # 安装 patch-package 是为了使 @feb/formily 能够正常装包
     npm install patch-package -g && \
     pnpm install
