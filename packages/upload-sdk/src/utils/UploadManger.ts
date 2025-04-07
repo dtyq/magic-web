@@ -22,6 +22,7 @@ import type { OSS } from "../types/OSS"
 import type { ErrorType } from "../types/error"
 import type { Kodo } from "../types/Kodo"
 import type { TOS } from "../types/TOS"
+import type { Local } from "../types/Local"
 import { isBlob, isFile } from "./checkDataFormat"
 import EventEmitter from "./EventEmitter"
 import { getUploadConfig } from "./global"
@@ -75,9 +76,8 @@ export class UploadManger {
 		option: PlatformMultipartUploadOption | PlatformSimpleUploadOption,
 	): TaskCallBack {
 		let taskId = nanoid()
-		const that = this
-		if (that.tasks[taskId]) {
-			while (that.tasks[taskId]) {
+		if (this.tasks[taskId]) {
+			while (this.tasks[taskId]) {
 				taskId = nanoid()
 			}
 		}
@@ -132,24 +132,24 @@ export class UploadManger {
 				TaskEvent.on(`${taskId}_progress`, taskEventCallback)
 			},
 			cancel: () => {
-				if (that.tasks[taskId]) {
+				if (this.tasks[taskId]) {
 					cancelRequest(taskId)
 					// 移除当前任务的所有回调
 					TaskEvent.off(`${taskId}_success`)
 					TaskEvent.off(`${taskId}_fail`)
 					TaskEvent.off(`${taskId}_progress`)
-					const { pauseInfo } = that.tasks[taskId]
+					const { pauseInfo } = this.tasks[taskId]
 					if (pauseInfo) {
 						// 清空复杂上传断点信息
-						delete that.tasks[taskId].pauseInfo
+						delete this.tasks[taskId].pauseInfo
 					}
 				}
 			},
 			pause: () => {
-				if (that.tasks[taskId]) {
-					const { pauseInfo } = that.tasks[taskId]
+				if (this.tasks[taskId]) {
+					const { pauseInfo } = this.tasks[taskId]
 					if (pauseInfo) {
-						that.tasks[taskId].pauseInfo = {
+						this.tasks[taskId].pauseInfo = {
 							...pauseInfo,
 							isPause: true,
 						}
@@ -158,18 +158,18 @@ export class UploadManger {
 				}
 			},
 			resume: () => {
-				if (that.tasks[taskId]) {
-					const { pauseInfo } = that.tasks[taskId]
+				if (this.tasks[taskId]) {
+					const { pauseInfo } = this.tasks[taskId]
 					// 只有复杂上传方式才能恢复上传
 					if (pauseInfo) {
 						const { isPause, checkpoint } = pauseInfo
 
 						if (isPause) {
-							that.tasks[taskId].pauseInfo = {
+							this.tasks[taskId].pauseInfo = {
 								isPause: false,
 								checkpoint,
 							}
-							that.upload(file, key, taskId, uploadSourceRequest, {
+							this.upload(file, key, taskId, uploadSourceRequest, {
 								...option,
 								checkpoint,
 							})
@@ -178,7 +178,7 @@ export class UploadManger {
 				}
 			},
 		}
-		that.tasks[taskId] = {
+		this.tasks[taskId] = {
 			success: (response) => {
 				TaskEvent.emit(`${taskId}_success`, response)
 			},
@@ -193,7 +193,7 @@ export class UploadManger {
 			resume: output.resume,
 		}
 
-		that.upload(file, key, taskId, uploadSourceRequest, option)
+		this.upload(file, key, taskId, uploadSourceRequest, option)
 
 		return {
 			success: output.success,
@@ -212,7 +212,6 @@ export class UploadManger {
 		uploadSourceRequest: Request,
 		option: PlatformMultipartUploadOption | PlatformSimpleUploadOption,
 	) {
-		const that = this
 		const onProgress: Progress = (
 			percent: number,
 			loaded: number,
@@ -221,13 +220,13 @@ export class UploadManger {
 		) => {
 			// 保存复杂上传断点信息
 			if (checkpoint) {
-				that.tasks[taskId].pauseInfo = {
+				this.tasks[taskId].pauseInfo = {
 					isPause: false,
 					checkpoint,
 				}
-				that.notifyProgress(taskId, percent, loaded, total, checkpoint)
+				this.notifyProgress(taskId, percent, loaded, total, checkpoint)
 			} else {
-				that.notifyProgress(taskId, percent, loaded, total, null)
+				this.notifyProgress(taskId, percent, loaded, total, null)
 			}
 		}
 		const isNeedForceReFresh = !option?.reUploadedCount
@@ -268,7 +267,8 @@ export class UploadManger {
 						TOS.STSAuthParams &
 						TOS.AuthParams &
 						OBS.STSAuthParams &
-						OBS.AuthParams,
+						OBS.AuthParams &
+						Local.AuthParams,
 					{
 						...option,
 						progress: onProgress,
@@ -277,8 +277,8 @@ export class UploadManger {
 				)
 			})
 			.then((res) => {
-				that.notifySuccess(taskId, res)
-				that.detach(taskId)
+				this.notifySuccess(taskId, res)
+				this.detach(taskId)
 			})
 			.catch((err) => {
 				let message = err
@@ -286,7 +286,7 @@ export class UploadManger {
 				if (err?.status === 1003) {
 					// 默认重传 3 次
 					if (option?.reUploadedCount && option?.reUploadedCount >= 2) {
-						that.notifyError(
+						this.notifyError(
 							taskId,
 							new InitException(InitExceptionCode.REUPLOAD_IS_FAILED),
 						)
@@ -306,7 +306,7 @@ export class UploadManger {
 				if (err?.status === 5001) {
 					message = new UploadException(UploadExceptionCode.UPLOAD_CANCEL)
 				}
-				that.notifyError(taskId, message)
+				this.notifyError(taskId, message)
 			})
 	}
 

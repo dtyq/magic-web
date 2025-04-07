@@ -1,6 +1,7 @@
 import type { OSS } from "./OSS"
 import type { ErrorType } from "./error"
 import type { Kodo } from "./Kodo"
+import type { Local } from "./Local"
 import type { Method } from "./request"
 
 /** 请求类型 */
@@ -131,10 +132,11 @@ export enum PlatformType {
 	Kodo = "qiniu",
 	TOS = "tos",
 	OBS = "obs",
+	Local = "local",
 }
 
 /** 聚合平台参数 */
-export type PlatformParams = OSS.AuthParams | OSS.STSAuthParams | Kodo.AuthParams
+export type PlatformParams = OSS.AuthParams | OSS.STSAuthParams | Kodo.AuthParams | Local.AuthParams
 
 /** 请求临时凭证，返回数据模板 */
 export interface UploadSource<T extends PlatformParams> {

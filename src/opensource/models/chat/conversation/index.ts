@@ -1,9 +1,9 @@
 import { isAiConversation } from "@/opensource/stores/chatNew/helpers/conversation"
 import { ConversationStatus, type ConversationFromService } from "@/types/chat/conversation"
-import { makeAutoObservable } from "mobx"
+import { makeAutoObservable, toJS } from "mobx"
 import { MessageReceiveType } from "@/types/chat"
 import type { ConversationObject, LastReceiveMessage } from "./types"
-import { cloneDeep } from "lodash-es"
+import { cloneDeep } from "lodash"
 
 class Conversation {
 	/**
