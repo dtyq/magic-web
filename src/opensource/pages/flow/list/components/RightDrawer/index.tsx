@@ -26,6 +26,7 @@ import defaultToolAvatar from "@/assets/logos/tool-avatar.png"
 import useStyles from "./style"
 import BindOpenApiAccount from "../BindOpenApiAccount"
 import ToolCard from "../ToolCard"
+import type { FlowWithTools } from "../../hooks/useFlowList"
 
 export type DataType = MagicFlow.Flow & {
 	icon?: string
@@ -78,41 +79,44 @@ function RightDrawer({
 	const isTools = useMemo(() => flowType === FlowRouteType.Tools, [flowType])
 
 	const getDrawerItem = useMemoizedFn(async () => {
-		if (isTools) {
-			const tools = data?.tools
-			if (tools?.length) {
-				const items = tools.map((tool) => {
-					return {
-						id: tool.code,
-						title: tool.name,
-						desc: tool.description,
-						enabled: tool.enabled,
-						more: true,
-						rawData: tool,
-					}
-				})
-				setDrawerItems(items)
-			}
-		} else {
-			const subFlow = await FlowApi.getSubFlowArguments(data?.id as string)
-			const structure = subFlow.input?.form.structure
-			if (structure) {
-				const { properties, required } = structure
-				const items = Object.entries(properties || {}).map(([key, value]) => {
-					const { title, type, description } = value as {
-						title: string
-						type: string
-						description: string
-					}
-					return {
-						title: key,
-						desc: `${title} ${description}`,
-						type,
-						required: required?.includes(key) || false,
-					}
-				})
-				setDrawerItems(items)
-			}
+		switch (flowType) {
+			case FlowRouteType.Tools:
+				const tools = (data as FlowWithTools)?.tools
+				if (tools?.length) {
+					const items = tools.map((tool) => {
+						return {
+							id: tool.code,
+							title: tool.name,
+							desc: tool.description,
+							enabled: tool.enabled,
+							more: true,
+							rawData: tool,
+						}
+					})
+					setDrawerItems(items)
+				}
+				break
+			case FlowRouteType.Sub:
+				const subFlow = await FlowApi.getSubFlowArguments(data?.id as string)
+				const structure = subFlow.input?.form.structure
+				if (structure) {
+					const { properties, required } = structure
+					const items = Object.entries(properties || {}).map(([key, value]) => {
+						const { title, type, description } = value
+						return {
+							title: key,
+							desc: `${title} ${description}`,
+							type,
+							required: required?.includes(key) || false,
+						}
+					})
+					setDrawerItems(items)
+				}
+				break
+			case FlowRouteType.Knowledge:
+				break
+			default:
+				break
 		}
 	})
 
@@ -129,9 +133,11 @@ function RightDrawer({
 
 	const subTitle = useMemo(() => {
 		return isTools
-			? resolveToString(t("flow.hasToolsNum"), { num: data?.tools?.length || 0 })
+			? resolveToString(t("flow.hasToolsNum"), {
+					num: (data as FlowWithTools)?.tools?.length || 0,
+			  })
 			: t("flow.flowInput")
-	}, [data?.tools?.length, isTools, t])
+	}, [data, isTools, t])
 
 	const handleAddTool = useMemoizedFn(() => {
 		if (data?.id) {

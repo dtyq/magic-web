@@ -104,14 +104,14 @@ const Attachments = ({
 						</Flex>
 
 						<Flex gap={4}>
-							<MagicButton
+							{/* <MagicButton
 								className={styles.controlButton}
 								type="text"
 								size="small"
 								onClick={() => onPreview?.(file)}
 							>
 								<MagicIcon component={IconEye} size={18} />
-							</MagicButton>
+							</MagicButton> */}
 							<MagicButton
 								className={styles.controlButton}
 								type="text"
@@ -120,9 +120,9 @@ const Attachments = ({
 							>
 								<MagicIcon component={IconCloudDownload} size={18} />
 							</MagicButton>
-							<MagicButton className={styles.controlButton} type="text" size="small">
+							{/* <MagicButton className={styles.controlButton} type="text" size="small">
 								<MagicIcon component={IconDeviceFloppy} size={18} />
-							</MagicButton>
+							</MagicButton> */}
 						</Flex>
 					</Flex>
 				))}
@@ -133,7 +133,7 @@ const Attachments = ({
 						? t("chat.messageAttachments.collapse")
 						: resolveToString(t("chat.messageAttachments.expandAllFiles"), {
 								count: data.length,
-							})}
+						  })}
 				</div>
 			) : null}
 		</div>

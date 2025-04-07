@@ -16,10 +16,10 @@ const HideConversationButton = observer(({ conversationId }: { conversationId: s
 	const conversation = conversations[conversationId]
 
 	const handleHideConversation = useMemoizedFn(() => {
-    if (!organizationCode || !conversation) return
-    
-    conversationService.deleteConversation(conversation.id)
-		
+		if (!organizationCode || !conversation) return
+
+		conversationService.deleteConversation(conversation.id)
+
 		ChatApi.hideConversation(conversation.id)
 	})
 

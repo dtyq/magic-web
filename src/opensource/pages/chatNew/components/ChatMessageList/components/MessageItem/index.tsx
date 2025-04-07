@@ -16,7 +16,6 @@ import MessageSendStatus from "../MessageSendStatus"
 import useStyles from "./style"
 import MagicAvatar from "@/opensource/components/base/MagicAvatar"
 import MemberCardStore from "@/opensource/stores/display/MemberCardStore"
-import { useMemoizedFn } from "ahooks"
 
 interface MessageItemProps {
 	message_id: string
@@ -48,17 +47,16 @@ const Avatar = memo(
 		// 使用 useMemo 缓存 info 对象，避免每次渲染都创建新对象
 		const info = useMemo(() => ({ name, avatar_url: getAvatarUrl(avatar) }), [name, avatar])
 
-		const openUserInfo = useMemoizedFn((e: React.MouseEvent<HTMLDivElement>) => {
-			e.stopPropagation()
-			MemberCardStore.openCard(uid, { x: e.clientX, y: e.clientY })
-		})
-
 		return (
 			<MagicAvatar
 				src={info.avatar_url}
 				size={size}
-				onClick={(e) => {
-					openUserInfo(e)
+				onClick={(e: any) => {
+					if (e) {
+						MemberCardStore.openCard(uid, { x: e.clientX, y: e.clientY })
+					}
+					e.stopPropagation()
+					e.preventDefault()
 				}}
 			>
 				{name}

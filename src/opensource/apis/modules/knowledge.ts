@@ -1,46 +1,53 @@
 import { genRequestUrl } from "@/utils/http"
-import { RequestUrl } from "../constant"
-import type { WithPage } from "@/types/flow"
+import type { VectorKnowledge, WithPage } from "@/types/flow"
 import type { Knowledge } from "@/types/knowledge"
 import type { HttpClient } from "../core/HttpClient"
+import { RequestUrl } from "../constant"
 
 export const generateKnowledgeApi = (fetch: HttpClient) => ({
 	/**
 	 * 创建知识库
 	 */
-	// createKnowledge(params: Knowledge.CreateKnowledgeParams) {
-	// 	return fetch.post<Knowledge.Detail>(genRequestUrl(RequestUrl.createKnowledge), params)
-	// },
+	createKnowledge(params: Knowledge.CreateKnowledgeParams) {
+		return fetch.post<Knowledge.CreateKnowledgeResult>(
+			genRequestUrl(RequestUrl.createKnowledge),
+			params,
+		)
+	},
 
 	/**
 	 * 更新知识库
 	 */
-	// updateKnowledge(params: Knowledge.UpdateKnowledgeParams) {
-	// 	return fetch.put<Knowledge.Detail>(
-	// 		genRequestUrl(RequestUrl.updateKnowledge, { code: params.code }),
-	// 		params,
-	// 	)
-	// },
+	updateKnowledge(params: Knowledge.UpdateKnowledgeParams) {
+		return fetch.put<Knowledge.Detail>(
+			genRequestUrl(RequestUrl.updateKnowledge, { code: params.code }),
+			params,
+		)
+	},
 
 	/**
 	 * 获取知识库列表
 	 */
-	getKnowledgeList({ name, page, pageSize }: { name: string; page: number; pageSize: number }) {
+	getKnowledgeList({
+		name,
+		page,
+		pageSize,
+		searchType,
+	}: {
+		name: string
+		page: number
+		pageSize: number
+		searchType: VectorKnowledge.SearchType
+	}) {
 		return fetch.post<WithPage<Knowledge.KnowledgeItem[]>>(
 			genRequestUrl(RequestUrl.getKnowledgeList),
 			{
 				name,
 				page,
 				page_size: pageSize,
+				search_type: searchType,
 			},
 		)
-	},
-
-	/**
-	 * 保存知识库
-	 */
-	saveKnowledge(params: Knowledge.SaveKnowledgeParams) {
-		return fetch.post<Knowledge.Detail>(genRequestUrl(RequestUrl.saveKnowledge), params)
 	},
 
 	/**
@@ -55,6 +62,54 @@ export const generateKnowledgeApi = (fetch: HttpClient) => ({
 	 */
 	deleteKnowledge(code: string) {
 		return fetch.delete<Knowledge.Detail>(genRequestUrl(RequestUrl.deleteKnowledge, { code }))
+	},
+
+	/**
+	 * 获取知识库的文档列表
+	 */
+	getKnowledgeDocumentList({
+		code,
+		name,
+		page,
+		pageSize,
+	}: {
+		code: string
+		name?: string
+		page?: number
+		pageSize?: number
+	}) {
+		return fetch.post<WithPage<Knowledge.EmbedDocumentDetail[]>>(
+			genRequestUrl(RequestUrl.getKnowledgeDocumentList, { code }),
+			{
+				name,
+				page,
+				page_size: pageSize,
+			},
+		)
+	},
+
+	/**
+	 * 添加知识库的文档
+	 */
+	addKnowledgeDocument(params: Knowledge.AddKnowledgeDocumentParams) {
+		return fetch.post<Knowledge.Detail>(
+			genRequestUrl(RequestUrl.addKnowledgeDocument, {
+				code: params.knowledge_code,
+			}),
+			params,
+		)
+	},
+
+	/**
+	 * 删除知识库的文档
+	 */
+	deleteKnowledgeDocument(params: Knowledge.DeleteKnowledgeDocumentParams) {
+		return fetch.delete<Knowledge.Detail>(
+			genRequestUrl(RequestUrl.deleteKnowledgeDocument, {
+				knowledge_code: params.knowledge_code,
+				document_code: params.document_code,
+			}),
+		)
 	},
 
 	/**

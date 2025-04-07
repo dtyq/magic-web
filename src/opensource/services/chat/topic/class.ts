@@ -251,8 +251,7 @@ class ChatTopicService {
 			return Promise.resolve([])
 		}
 
-		return ChatApi
-			.getTopicList(conversationId)
+		return ChatApi.getTopicList(conversationId)
 			.then((res) => {
 				// 将 API 返回的话题列表转换为 Topic 实例数组
 				const topicsData = res?.reverse() ?? []
@@ -329,8 +328,7 @@ class ChatTopicService {
 		if (!isAiConversation(conversationStore.currentConversation?.receive_type))
 			return Promise.resolve()
 
-		return ChatApi
-			.getMagicTopicName(conversationId, topicId)
+		return ChatApi.getMagicTopicName(conversationId, topicId)
 			.then((res) => {
 				return this.updateTopic(topicId, res.name)
 			})
@@ -346,7 +344,9 @@ class ChatTopicService {
 	setCurrentConversationTopic(topicId: string | undefined) {
 		const conversationId = conversationStore.currentConversation?.id
 		console.log(
-			`[setCurrentConversationTopic] 开始设置当前话题，会话ID=${conversationId}，话题ID=${topicId || "空"}`,
+			`[setCurrentConversationTopic] 开始设置当前话题，会话ID=${conversationId}，话题ID=${
+				topicId || "空"
+			}`,
 		)
 
 		if (!conversationId) {
@@ -386,7 +386,9 @@ class ChatTopicService {
 	createTopic(topicName?: string) {
 		const conversationId = conversationStore.currentConversation?.id
 		console.log(
-			`[createTopic] 开始创建话题，会话ID=${conversationId}，话题名称=${topicName || "未命名"}`,
+			`[createTopic] 开始创建话题，会话ID=${conversationId}，话题名称=${
+				topicName || "未命名"
+			}`,
 		)
 
 		if (!conversationId) {

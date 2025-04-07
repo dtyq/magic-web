@@ -10,10 +10,12 @@ import { FlowRouteType } from "@/types/flow"
 import { useTranslation } from "react-i18next"
 import { resolveToString } from "@dtyq/es6-template-strings"
 import { colorScales } from "@/opensource/providers/ThemeProvider/colors"
+import { formatToK } from "@/utils/number"
 import FlowTag from "../FlowTag"
 import useStyles from "./style"
 import OperateMenu from "../OperateMenu"
 import { hasEditRight } from "../AuthControlButton/types"
+import type { Knowledge } from "@/types/knowledge"
 
 type Flow = MagicFlow.Flow & {
 	quote?: number
@@ -24,13 +26,13 @@ type Flow = MagicFlow.Flow & {
 }
 
 type FlowCardProps = {
-	data: Flow
+	data: Flow | Knowledge.KnowledgeItem
 	selected: boolean
 	lineCount: number
 	flowType?: FlowRouteType
 	dropdownItems: React.ReactNode
-	onCardClick: (flow: MagicFlow.Flow) => void
-	updateEnable: (flow: Flow) => void
+	onCardClick: (flow: MagicFlow.Flow | Knowledge.KnowledgeItem) => void
+	updateEnable: (flow: Flow | Knowledge.KnowledgeItem) => void
 }
 
 function Card({
@@ -45,6 +47,7 @@ function Card({
 	const { styles } = useStyles()
 
 	const { t } = useTranslation("interface")
+	const { t: tFlow } = useTranslation("flow")
 
 	const updateInnerEnable = useMemoizedFn((_, e) => {
 		e.stopPropagation()
@@ -65,13 +68,19 @@ function Card({
 	}, [data])
 
 	const tagRender = useMemo(() => {
-		let quote
+		let quote = 0
 		let tools = 0
-		if (flowType === FlowRouteType.Tools) {
-			quote = data.agent_used_count ? data.agent_used_count : 0
-			tools = data.tools ? data.tools.length : 0
-		} else {
-			quote = data.quote ? data.quote : 0
+		switch (flowType) {
+			case FlowRouteType.Tools:
+				quote = (data as Flow).agent_used_count ? (data as Flow).agent_used_count! : 0
+				tools = (data as Flow).tools ? (data as Flow).tools!.length : 0
+				break
+			case FlowRouteType.Sub:
+				quote = (data as Flow).quote ? (data as Flow).quote! : 0
+				break
+			// TODO 知识库的引用关系
+			default:
+				break
 		}
 		const quoteTag =
 			quote > 0
@@ -100,7 +109,7 @@ function Card({
 					...quoteTag,
 			  ]
 			: quoteTag
-	}, [data.agent_used_count, data.quote, data.tools, flowType, t])
+	}, [data, flowType, t])
 
 	return (
 		<Flex
@@ -111,26 +120,45 @@ function Card({
 		>
 			<PromptCard type={flowType} data={cardData} lineCount={lineCount} height={9} />
 			<Flex justify="space-between" align="center">
-				<Flex gap={4} align="center">
-					{tagRender.map((item) => {
-						return (
-							<FlowTag
-								key={`${data.id}-${item.key}`}
-								text={item.text}
-								icon={item.icon}
-							/>
-						)
-					})}
-				</Flex>
+				{flowType !== FlowRouteType.Knowledge && (
+					<Flex gap={4} align="center">
+						{tagRender.map((item) => {
+							return (
+								<FlowTag
+									key={`${data.id}-${item.key}`}
+									text={item.text}
+									icon={item.icon}
+								/>
+							)
+						})}
+					</Flex>
+				)}
 
 				{hasEditRight(data.user_operation) && (
-					<Flex gap={8} align="center" style={{ marginLeft: "auto" }}>
+					<Flex gap={8} align="center">
 						{t("agent.status")}
 						<Switch checked={data.enabled} onChange={updateInnerEnable} size="small" />
 					</Flex>
 				)}
 			</Flex>
-			<div>{`${t("agent.createTo")} ${data.created_at?.replace(/-/g, "/")}`}</div>
+			<Flex justify="space-between" align="center">
+				<div>{`${t("agent.createTo")} ${data.created_at?.replace(/-/g, "/")}`}</div>
+				{flowType === FlowRouteType.Knowledge && (
+					<Flex gap={5} align="center">
+						<div>
+							{tFlow("common.documentCount", {
+								num: data.document_count || 0,
+							})}
+						</div>
+						<div>/</div>
+						<div>
+							{tFlow("common.wordCount", {
+								num: formatToK(data.word_count) || 0,
+							})}
+						</div>
+					</Flex>
+				)}
+			</Flex>
 			{hasEditRight(data.user_operation) && (
 				<div className={styles.moreOperations}>
 					<OperateMenu menuItems={dropdownItems} useIcon />
@@ -152,5 +180,7 @@ const FlowCard = memo((props: FlowCardProps) => {
 		</OperateMenu>
 	)
 })
+
+FlowCard.displayName = "FlowCard"
 
 export default FlowCard

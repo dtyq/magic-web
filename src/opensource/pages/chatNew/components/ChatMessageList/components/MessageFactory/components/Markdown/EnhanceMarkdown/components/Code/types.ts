@@ -1,5 +1,3 @@
-import { CodeLanguage } from "./const"
-
 /**
  * 代码渲染组件的props
  */
@@ -28,7 +26,7 @@ export interface CodeRenderProps {
  * 代码渲染组件
  */
 export interface CodeRenderComponent {
-	componentType: CodeLanguage
+	componentType: string
 	propsParser?: (props: CodeRenderProps) => unknown
 	loader: () => Promise<{
 		default:

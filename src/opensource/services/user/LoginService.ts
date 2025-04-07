@@ -5,7 +5,7 @@ import type { User } from "@/types/user"
 import { getDeviceInfo } from "@/utils/devices"
 import { keyBy } from "lodash-es"
 import { userTransformer } from "@/opensource/models/user/transformers"
-import type * as apis from "@/apis"
+import type * as apis from "@/opensource/apis"
 import type { Container } from "@/opensource/services/ServiceContainer"
 import type { VerificationCode } from "@/const/bussiness"
 import { userStore } from "@/opensource/models/user/stores"
@@ -14,11 +14,11 @@ import type { ConfigService } from "../config/ConfigService"
 import type { UserService } from "./UserService"
 
 export class LoginService {
-	protected userApi: typeof apis.UserApi
+	protected userApi: (typeof apis)["UserApi"]
 
-	protected authApi: typeof apis.AuthApi
+	protected authApi: (typeof apis)["AuthApi"]
 
-	protected commonApi: typeof apis.CommonApi
+	protected commonApi: (typeof apis)["CommonApi"]
 
 	protected readonly service: Container
 
@@ -170,11 +170,11 @@ export class LoginService {
 			//
 			// // 获取到 teamshare 的组织后，需要针对上步 magicOrganizationMap 进行合法性过滤(因后端没处理 magicOrganizationMap 数据的合法性，所以这里需要根据 teamshare 中不存在的组织过滤 magicOrganizationMap)
 			// const magicOrganizationArray = Object.values(allMagicOrganizationMap).filter((o) =>
-			// 	teamshareOrgsCode.includes(o.teamshare_organization_code),
+			// 	teamshareOrgsCode.includes(o.third_platform_organization_code),
 			// )
 			// const magicOrganizationMap = keyBy(
 			// 	magicOrganizationArray,
-			// 	"teamshare_organization_code",
+			// 	"third_platform_organization_code",
 			// )
 			// const teamshareOrgMap = keyBy(magicOrganizationArray, "magic_organization_code")
 

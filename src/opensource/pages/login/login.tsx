@@ -73,12 +73,12 @@ function LoginPage() {
 						console.error("authorizationSyncStep", ...args)
 						return Promise.resolve(...args)
 					})
+					.then(magicOrgSyncStep)
 					.then(async (userInfo) => {
 						// 环境同步
 						await loginService.syncClusterConfig()
 						return Promise.resolve(userInfo)
 					})
-					.then(magicOrgSyncStep)
 					// @ts-ignore
 					.then(loginService.organizationFetchStep)
 					.then(loginService.organizationSyncStep)

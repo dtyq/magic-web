@@ -155,8 +155,7 @@ class ConversationBotDataManager {
 		this.isfetchBotInfoLoading = true
 
 		// 获取机器人信息
-		return ChatApi
-			.getAiAssistantBotInfo({ user_id: userId })
+		return ChatApi.getAiAssistantBotInfo({ user_id: userId })
 			.then((data) => {
 				this.instructions = data.instructs
 				this.startPage = data.start_page
@@ -189,12 +188,11 @@ class ConversationBotDataManager {
 
 		this.isUpdateConversationInstructionConfigLoading = true
 
-		return ChatApi
-			.updateAiConversationQuickInstructionConfig({
-				conversation_id: this.conversationId,
-				receive_id: this.userId,
-				instructs,
-			})
+		return ChatApi.updateAiConversationQuickInstructionConfig({
+			conversation_id: this.conversationId,
+			receive_id: this.userId,
+			instructs,
+		})
 			.then(({ instructs: instructs_list }) => {
 				if (remove) {
 					this.innerInstructConfig = omit(
@@ -277,15 +275,12 @@ class ConversationBotDataManager {
 
 			if (container) {
 				// 获取默认配置
-				const defaultConfig = instructMap.reduce(
-					(acc, cur) => {
-						if (cur.type === InstructionType.SWITCH) {
-							acc[cur.id] = cur.default_value
-						}
-						return acc
-					},
-					{} as Record<string, unknown>,
-				)
+				const defaultConfig = instructMap.reduce((acc, cur) => {
+					if (cur.type === InstructionType.SWITCH) {
+						acc[cur.id] = cur.default_value
+					}
+					return acc
+				}, {} as Record<string, unknown>)
 
 				// 合并默认配置和用户配置
 				Object.entries({ ...defaultConfig, ...this.instructConfig })

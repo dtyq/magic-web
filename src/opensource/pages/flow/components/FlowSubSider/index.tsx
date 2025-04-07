@@ -86,7 +86,9 @@ function FlowSubSider() {
 						extra: <MagicIcon component={IconChevronRight} />,
 					},
 					{
-						id: RoutePath.FlowKnowledgeList,
+						id: replaceRouteParams(RoutePath.Flows, {
+							type: FlowRouteType.Knowledge,
+						}),
 						title: t("vectorDatabase.name", { ns: "flow" }),
 						avatar: {
 							icon: <MagicIcon component={IconFileDatabase} color="currentColor" />,

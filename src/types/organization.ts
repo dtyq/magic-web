@@ -133,8 +133,17 @@ export interface StructureUserItem {
 	is_leader: boolean
 	/** 路径节点 */
 	path_nodes: PathNode[]
-	/** 机器人信息 */
+	/**
+	 * @deprecated 机器人信息
+	 * 请使用 agent_info 代替
+	 */
 	bot_info?: {
+		bot_id: string
+		flow_code: string
+		user_operation: OperationTypes
+	}
+	/** 机器人信息 */
+	agent_info?: {
 		bot_id: string
 		flow_code: string
 		user_operation: OperationTypes

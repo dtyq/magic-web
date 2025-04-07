@@ -11,35 +11,34 @@ import type { StructureUserItem } from "@/types/organization"
 import { hasEditRight } from "@/opensource/pages/flow/components/AuthControlButton/types"
 import { FlowRouteType } from "@/types/flow"
 import { observer } from "mobx-react-lite"
-import conversationStore from "@/opensource/stores/chatNew/conversation"
-import { ContactApi } from "@/opensource/apis"
 import UserPopoverContent from "./user"
+import { isUndefined } from "lodash-es"
+import userInfoService from "@/opensource/services/userInfo"
 
-const AiPopoverContent = observer(({ conversationId }: { conversationId: string }) => {
+interface AiPopoverContentProps {
+	receiveId: string
+	conversationId: string
+}
+
+const AiPopoverContent = observer(({ receiveId, conversationId }: AiPopoverContentProps) => {
 	const { t } = useTranslation("interface")
 	const navigate = useNavigate()
 	const [ai, setAI] = useState<StructureUserItem>()
 
-	const { conversations } = conversationStore
-	const conversation = conversations[conversationId]
-
-	const initAIInfo = useMemoizedFn(async () => {
-		if (!conversation) return
-		const users = await ContactApi.getUserInfos({
-			user_ids: [conversation.receive_id],
-			query_type: 1,
-		})
-		setAI(users?.items?.[0])
-	})
-
 	useMount(() => {
-		initAIInfo()
+		userInfoService.fetchUserInfos([receiveId], 1).then((res) => {
+			setAI(res?.[0])
+		})
 	})
+
+	console.log("ai", ai)
+
+	console.log("AiPopoverContent", AiPopoverContent)
 
 	const navigateToWorkflow = useMemoizedFn(async () => {
 		navigate(
 			replaceRouteParams(RoutePath.FlowDetail, {
-				id: ai?.bot_info?.bot_id || "",
+				id: ai?.agent_info?.bot_id || "",
 				type: FlowRouteType.Agent,
 			}),
 		)
@@ -48,18 +47,19 @@ const AiPopoverContent = observer(({ conversationId }: { conversationId: string 
 	return (
 		<>
 			{/* <PraiseButton /> */}
-			{hasEditRight(ai?.bot_info?.user_operation!) && (
-				<MagicButton
-					justify="flex-start"
-					icon={<MagicIcon component={IconUserCog} size={20} />}
-					size="large"
-					type="text"
-					block
-					onClick={navigateToWorkflow}
-				>
-					{t("chat.floatButton.aiAssistantConfiguration")}
-				</MagicButton>
-			)}
+			{!isUndefined(ai?.agent_info?.user_operation) &&
+				hasEditRight(ai?.agent_info?.user_operation) && (
+					<MagicButton
+						justify="flex-start"
+						icon={<MagicIcon component={IconUserCog} size={20} />}
+						size="large"
+						type="text"
+						block
+						onClick={navigateToWorkflow}
+					>
+						{t("chat.floatButton.aiAssistantConfiguration")}
+					</MagicButton>
+				)}
 			{/* <div style={{ height: 1, background: colorUsages.border }} /> */}
 			<UserPopoverContent conversationId={conversationId} />
 		</>

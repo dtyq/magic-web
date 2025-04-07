@@ -95,9 +95,12 @@ class MemberCardStore {
 		if (this.isHover && !force) return
 		this.open = false
 		this.isHover = false
-		this.position = { x: 0, y: 0 }
-		this.uid = null
-		this.setUserInfo(undefined)
+		// 延迟重置位置，等待动画完成
+		setTimeout(() => {
+			this.position = { x: 0, y: 0 }
+			this.uid = null
+			this.setUserInfo(undefined)
+		}, this.animationDuration)
 	}
 
 	/**

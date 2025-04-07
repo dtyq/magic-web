@@ -22,13 +22,11 @@ export default createStyles(({ prefixCls, css, isDarkMode, token }) => ({
 		overflow: hidden;
 	`,
 	organizationList: css`
-		height: calc(100% - 60px);
+		height: 100%;
 	`,
 
 	fadeWrapper: css`
-		transition:
-			opacity 0.3s ease,
-			max-height 0.3s ease;
+		transition: opacity 0.3s ease, max-height 0.3s ease;
 		overflow: hidden;
 	`,
 	panelWrapper: css`

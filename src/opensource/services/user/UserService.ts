@@ -4,7 +4,7 @@ import type { User } from "@/types/user"
 import { keyBy } from "lodash-es"
 import type { Login } from "@/types/login"
 import { initDataContextDb } from "@/opensource/database/data-context"
-import type * as apis from "@/apis"
+import type * as apis from "@/opensource/apis"
 import type { Container } from "@/opensource/services/ServiceContainer"
 import { userStore } from "@/opensource/models/user/stores"
 import { userTransformer } from "@/opensource/models/user/transformers"
@@ -171,38 +171,24 @@ export class UserService {
 	/**
 	 * @description 组织切换
 	 */
-	switchOrganization = async (organizationCode: string) => {
-		this.setTeamshareOrganizationCode(organizationCode)
-		const user = new UserRepository()
-		const account = new AccountRepository()
+	switchOrganization = async (magic_user_id: string, magic_organization_code: string) => {
+		// 拉取用户信息
+		const { items } = await this.contactApi.getUserInfos({
+			user_ids: [magic_user_id],
+			query_type: 2,
+		})
 
-		const userInfo = await user.getUserInfo()
-		const accountInfo = await account.get(userInfo!.magic_id)
+		const targetUser = items[0]
 
-		// 找到目标组织的 user_id，拉取用户信息，更新本地信息
-		const targetMagicUser = accountInfo?.organizations.find(
-			(org) => org.third_platform_organization_code === organizationCode,
-		)
+		if (targetUser) {
+			this.setUserInfo(userTransformer(targetUser))
 
-		if (targetMagicUser) {
-			// 拉取用户信息
-			const { items } = await this.contactApi.getUserInfos({
-				user_ids: [targetMagicUser.magic_user_id],
-				query_type: 2,
-			})
-
-			const targetUser = items[0]
-
-			if (targetUser) {
-				this.setUserInfo(userTransformer(targetUser))
-
-				const db = initDataContextDb(targetUser?.magic_id, targetUser?.user_id)
-				await userInfoService.loadData(db)
-				await groupInfoService.loadData(db)
-			} else {
-				// 切换失败，恢复当前组织
-				this.setMagicOrganizationCode(targetMagicUser.magic_organization_code)
-			}
+			const db = initDataContextDb(targetUser?.magic_id, targetUser?.user_id)
+			await userInfoService.loadData(db)
+			await groupInfoService.loadData(db)
+		} else {
+			// 切换失败，恢复当前组织
+			this.setMagicOrganizationCode(magic_organization_code)
 		}
 	}
 
@@ -210,7 +196,7 @@ export class UserService {
 		const user = new UserRepository()
 		const { magicOrganizationMap } = userStore.user
 		const teamshareOrgCode =
-			magicOrganizationMap?.[organizationCode]?.third_platform_organization_code
+			magicOrganizationMap?.[organizationCode]?.third_platform_organization_code ?? ""
 		user.setOrganizationCode(organizationCode)
 		user.setTeamshareOrganizationCode(teamshareOrgCode)
 
@@ -259,9 +245,13 @@ export class UserService {
 	/**
 	 * @description 账号切换
 	 * @param unionId
-	 * @param thirdPlatformOrganizationCode
+	 * @param magicOrganizationCode
 	 */
-	switchAccount = async (unionId: string, thirdPlatformOrganizationCode: string) => {
+	switchAccount = async (
+		unionId: string,
+		magic_user_id: string,
+		magic_organization_code: string,
+	) => {
 		const { accounts } = userStore.account
 		const account = accounts.find((o) => o.magic_id === unionId)
 		if (account) {
@@ -270,13 +260,9 @@ export class UserService {
 				.magicOrganizationSyncStep(account?.deployCode as string)
 			this.setAuthorization(account?.access_token)
 
-			const targetUser = account.organizations.find(
-				(o) => o.third_platform_organization_code === thirdPlatformOrganizationCode,
-			)
-
-			if (targetUser) {
+			if (magic_user_id && magic_organization_code) {
 				// 同步用户对应组织
-				this.setMagicOrganizationCode(targetUser.magic_organization_code)
+				this.setMagicOrganizationCode(magic_organization_code)
 				// Step 1: 环境同步
 				await this.service
 					.get<LoginService>("loginService")
@@ -284,7 +270,7 @@ export class UserService {
 				// Step 2: 同步用户信息
 				await this.service
 					.get<LoginService>("loginService")
-					.fetchUserInfoStep(targetUser.magic_user_id)
+					.fetchUserInfoStep(magic_user_id)
 				// Step 3: magic中组织体系获取
 				const { magicOrganizationMap } = await magicOrgSyncStep({
 					access_token: account.access_token,
@@ -390,8 +376,6 @@ export class UserService {
 
 	login() {
 		const { authorization } = userStore.user
-
-		console.log("登录", { authorization })
 
 		if (!authorization) {
 			throw new Error("authorization or organization_code is required")

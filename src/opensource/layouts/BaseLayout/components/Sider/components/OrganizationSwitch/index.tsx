@@ -1,5 +1,5 @@
 import MagicAvatar from "@/opensource/components/base/MagicAvatar"
-import { useCurrentOrganization } from "@/opensource/models/user/hooks"
+import { useCurrentMagicOrganization } from "@/opensource/models/user/hooks"
 
 import { Popover } from "antd"
 import type { ReactNode } from "react"
@@ -13,43 +13,45 @@ interface OrganizationSwitchProps {
 	children?: ReactNode
 }
 
-const OrganizationSwitch = memo(
-	({ className, showPopover = true, children }: OrganizationSwitchProps) => {
-		const { styles, cx } = useStyles()
+const OrganizationSwitch = memo(function OrganizationSwitch({
+	className,
+	showPopover = true,
+	children,
+}: OrganizationSwitchProps) {
+	const { styles, cx } = useStyles()
 
-		const currentAccount = useCurrentOrganization()
+	const currentAccount = useCurrentMagicOrganization()
 
-		const [open, setOpen] = useState(false)
+	const [open, setOpen] = useState(false)
 
-		const ChildrenContent = children ?? (
-			<MagicAvatar
-				src={currentAccount?.organization_logo?.[0]?.url}
-				size={30}
-				className={cx(className, styles.avatar)}
-			>
-				{currentAccount?.organization_name}
-			</MagicAvatar>
-		)
+	const ChildrenContent = children ?? (
+		<MagicAvatar
+			// src={currentAccount?.organization_logo?.[0]?.url}
+			size={30}
+			className={cx(className, styles.avatar)}
+		>
+			{currentAccount?.magic_organization_code}
+		</MagicAvatar>
+	)
 
-		if (!showPopover) {
-			return ChildrenContent
-		}
+	if (!showPopover) {
+		return ChildrenContent
+	}
 
-		return (
-			<Popover
-				overlayClassName={styles.popover}
-				placement="rightBottom"
-				open={open}
-				onOpenChange={setOpen}
-				arrow={false}
-				trigger={["click"]}
-				autoAdjustOverflow
-				content={<OrganizationList onClose={() => setOpen(false)} />}
-			>
-				{ChildrenContent}
-			</Popover>
-		)
-	},
-)
+	return (
+		<Popover
+			classNames={{ root: styles.popover }}
+			placement="rightBottom"
+			open={open}
+			onOpenChange={setOpen}
+			arrow={false}
+			trigger={["click"]}
+			autoAdjustOverflow
+			content={<OrganizationList onClose={() => setOpen(false)} />}
+		>
+			{ChildrenContent}
+		</Popover>
+	)
+})
 
 export default OrganizationSwitch

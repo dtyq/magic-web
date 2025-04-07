@@ -313,3 +313,17 @@ export namespace Flow {
 		models: VLMModel[]
 	}
 }
+
+/**
+ * 向量知识库
+ */
+export namespace VectorKnowledge {
+	export enum SearchType {
+		/** 全部 */
+		All = 1,
+		/** 已启用 */
+		Enabled = 2,
+		/** 已禁用 */
+		Disabled = 3,
+	}
+}

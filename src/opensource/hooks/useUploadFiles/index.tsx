@@ -176,23 +176,26 @@ export const useUpload = <F extends FileUploadData>({
 	}
 
 	// 图片上传并获取文件url
-	const uploadAndGetFileUrl = useMemoizedFn(async (filesList) => {
-		if (validateFileType(filesList[0].file)) {
-			const { fullfilled } = await upload(filesList)
-			if (fullfilled.length === filesList.length) {
-				const reportRes = await FileApi.reportFileUploads(
-					fullfilled.map((d) => ({
-						file_extension: d.value.name.split(".").pop() ?? "",
-						file_key: d.value.key,
-						file_size: d.value.size,
-						file_name: d.value.name,
-					})),
-				)
-				return getFileUrls(reportRes)
+	const uploadAndGetFileUrl = useMemoizedFn(
+		async (filesList, validator?: (file: File) => boolean) => {
+			const validatorFn = validator ?? validateFileType
+			if (validatorFn(filesList[0].file)) {
+				const { fullfilled } = await upload(filesList)
+				if (fullfilled.length === filesList.length) {
+					const reportRes = await FileApi.reportFileUploads(
+						fullfilled.map((d) => ({
+							file_extension: d.value.name.split(".").pop() ?? "",
+							file_key: d.value.key,
+							file_size: d.value.size,
+							file_name: d.value.name,
+						})),
+					)
+					return getFileUrls(reportRes)
+				}
 			}
-		}
-		return { fullfilled: [] }
-	})
+			return { fullfilled: [] }
+		},
+	)
 
 	return {
 		upload,

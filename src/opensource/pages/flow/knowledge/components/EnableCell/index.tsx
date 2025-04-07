@@ -18,8 +18,11 @@ export default function EnableCell({
 }: EnableCellProps) {
 	const updateEnableStatus = useMemoizedFn(async (checked: boolean, event) => {
 		event.stopPropagation()
-		await KnowledgeApi.saveKnowledge({
-			...record,
+		await KnowledgeApi.updateKnowledge({
+			code: record.code,
+			name: record.name,
+			description: record.description,
+			icon: record.icon,
 			enabled: checked,
 		})
 		updateKnowledgeById(record.id, ["enabled"], checked)

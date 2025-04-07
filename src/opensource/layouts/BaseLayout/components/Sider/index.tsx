@@ -8,7 +8,7 @@ import { useGlobalLanguage } from "@/opensource/models/config/hooks"
 import Divider from "@/opensource/components/other/Divider"
 import { useUserInfo } from "@/opensource/models/user/hooks"
 import type { MenuItemType } from "antd/es/menu/interface"
-import { useAutoCollapsed, useSideMenu } from "./hooks"
+import { useAutoCollapsed } from "./hooks"
 import { useStyles } from "./styles"
 import UserMenus from "./components/UserMenus"
 import OrganizationSwitch from "./components/OrganizationSwitch"
@@ -18,6 +18,7 @@ import MagicAvatar from "@/opensource/components/base/MagicAvatar"
 interface SiderProps {
 	collapsed?: boolean
 	className?: string
+	menuItems?: Array<Array<MenuItemType>>
 }
 
 const userSquareRoundedKeys = [
@@ -28,85 +29,85 @@ const userSquareRoundedKeys = [
 ]
 
 const Sider = memo(
-	forwardRef<HTMLDivElement, SiderProps>(({ collapsed = false, className }: SiderProps, ref) => {
-		const navigate = useNavigate()
-		const { pathname } = useLocation()
+	forwardRef<HTMLDivElement, SiderProps>(
+		({ collapsed = false, className, menuItems }: SiderProps, ref) => {
+			const navigate = useNavigate()
+			const { pathname } = useLocation()
 
-		// 判断当前路径是否是通讯录相关路由
-		const isUserSquareRoundedActive = useMemo(() => {
-			return userSquareRoundedKeys.some((key) => pathname.startsWith(key))
-		}, [pathname])
+			// 判断当前路径是否是通讯录相关路由
+			const isUserSquareRoundedActive = useMemo(() => {
+				return userSquareRoundedKeys.some((key) => pathname.startsWith(key))
+			}, [pathname])
 
-		// 选中状态计算
-		const selectedKeys = useMemo(() => {
-			// 如果是通讯录相关路由，返回通讯录的key
-			if (isUserSquareRoundedActive) {
-				return [RoutePath.ContactsOrganization]
-			}
-			// 其他情况返回当前路径
-			return [pathname]
-		}, [pathname, isUserSquareRoundedActive])
+			// 选中状态计算
+			const selectedKeys = useMemo(() => {
+				// 如果是通讯录相关路由，返回通讯录的key
+				if (isUserSquareRoundedActive) {
+					return [RoutePath.ContactsOrganization]
+				}
+				// 其他情况返回当前路径
+				return [pathname]
+			}, [pathname, isUserSquareRoundedActive])
 
-		const language = useGlobalLanguage(false)
+			const language = useGlobalLanguage(false)
 
-		const { userInfo } = useUserInfo()
+			const { userInfo } = useUserInfo()
 
-		const { styles, cx } = useStyles({ collapsed: useAutoCollapsed(collapsed), language })
+			const { styles, cx } = useStyles({ collapsed: useAutoCollapsed(collapsed), language })
 
-		const pageMenuItems: Array<Array<MenuItemType>> = useSideMenu()
+			const handleNavigate = useMemoizedFn(({ key }: { key: string }) => {
+				navigate(key)
+			})
 
-		const handleNavigate = useMemoizedFn(({ key }: { key: string }) => {
-			navigate(key)
-		})
+			const OrganizationSwitchChildren = useMemo(
+				() => (
+					<div className={styles.icon}>
+						<MagicIcon color="currentColor" size={16} component={IconDots} />
+					</div>
+				),
+				[styles.icon],
+			)
 
-		const OrganizationSwitchChildren = useMemo(
-			() => (
-				<div className={styles.icon}>
-					<MagicIcon color="currentColor" size={16} component={IconDots} />
-				</div>
-			),
-			[styles.icon],
-		)
-
-		return (
-			<Flex
-				ref={ref}
-				className={cx(styles.sider, className)}
-				vertical
-				align="center"
-				justify="space-between"
-			>
-				<UserMenus>
-					<MagicAvatar src={userInfo?.avatar} size={40}>
-						{userInfo?.nickname}
-					</MagicAvatar>
-				</UserMenus>
-				<Divider direction="horizontal" className={styles.divider} />
-				<Flex vertical flex={1} className={styles.menus}>
-					{pageMenuItems.map((menu, index) => {
-						const key = `index-${index}`
-						return (
-							<Menu
-								key={key}
-								mode="inline"
-								selectedKeys={selectedKeys}
-								className={cx(styles.menu)}
-								items={menu}
-								onClick={handleNavigate}
-							/>
-						)
-					})}
+			return (
+				<Flex
+					ref={ref}
+					className={cx(styles.sider, className)}
+					vertical
+					align="center"
+					justify="space-between"
+				>
+					<UserMenus>
+						<MagicAvatar src={userInfo?.avatar} size={40}>
+							{userInfo?.nickname}
+						</MagicAvatar>
+					</UserMenus>
+					<Divider direction="horizontal" className={styles.divider} />
+					<Flex vertical flex={1} className={styles.menus}>
+						{menuItems?.map((menu, index) => {
+							const key = `index-${index}`
+							return (
+								<Menu
+									key={key}
+									mode="inline"
+									selectedKeys={selectedKeys}
+									className={cx(styles.menu)}
+									items={menu}
+									onClick={handleNavigate}
+								/>
+							)
+						})}
+					</Flex>
+					<Divider direction="horizontal" className={styles.divider} />
+					<Flex gap={4} align="center" className={styles.organizationSwitchWrapper}>
+						<OrganizationSwitch showPopover={false} />
+						<OrganizationSwitch showPopover>
+							{OrganizationSwitchChildren}
+						</OrganizationSwitch>
+					</Flex>
 				</Flex>
-				<Divider direction="horizontal" className={styles.divider} />
-				<Flex gap={4} align="center" className={styles.organizationSwitchWrapper}>
-					<OrganizationSwitch showPopover={false} />
-					<OrganizationSwitch showPopover>
-						{OrganizationSwitchChildren}
-					</OrganizationSwitch>
-				</Flex>
-			</Flex>
-		)
-	}),
+			)
+		},
+	),
 )
 
 export default Sider

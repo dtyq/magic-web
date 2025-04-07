@@ -1,16 +1,27 @@
-import CodeComponents from "./config/CodeComponents"
 import { CodeLanguage } from "./const"
 import { CodeRenderComponent, CodeRenderProps } from "./types"
 import { LazyExoticComponent, ComponentType, lazy } from "react"
-
+import CodeComponents from "./config/CodeComponents"
 class CodeRenderFactory {
-	// 组件缓存，优先读取缓存
-	private static componentCache = new Map<
-		string,
-		LazyExoticComponent<ComponentType<CodeRenderProps>>
-	>()
+	/**
+	 * 代码组件
+	 */
+	private codeComponents = new Map<string, CodeRenderComponent>()
 
-	private static getFallbackComponent(): LazyExoticComponent<ComponentType<CodeRenderProps>> {
+	/**
+	 * 组件缓存
+	 */
+	private componentCache = new Map<string, LazyExoticComponent<ComponentType<CodeRenderProps>>>()
+
+	constructor() {
+		this.codeComponents = new Map<string, CodeRenderComponent>(Object.entries(CodeComponents))
+	}
+
+	/**
+	 * 获取默认组件
+	 * @returns 默认组件
+	 */
+	private getFallbackComponent(): LazyExoticComponent<ComponentType<CodeRenderProps>> {
 		return lazy(() => import("./components/Fallback"))
 	}
 
@@ -18,7 +29,7 @@ class CodeRenderFactory {
 	 * 获取行内代码组件
 	 * @returns 行内代码组件
 	 */
-	static getInlineComponent(): LazyExoticComponent<ComponentType<CodeRenderProps>> {
+	getInlineComponent(): LazyExoticComponent<ComponentType<CodeRenderProps>> {
 		return lazy(() => import("./components/InlineCode"))
 	}
 
@@ -27,8 +38,8 @@ class CodeRenderFactory {
 	 * @param lang 语言
 	 * @param componentConfig 组件配置
 	 */
-	static registerComponent(lang: CodeLanguage, componentConfig: CodeRenderComponent) {
-		CodeComponents[lang] = componentConfig
+	registerComponent(lang: string, componentConfig: CodeRenderComponent) {
+		this.codeComponents.set(lang, componentConfig)
 	}
 
 	/**
@@ -36,9 +47,9 @@ class CodeRenderFactory {
 	 * @param type 组件类型
 	 * @returns 组件
 	 */
-	static getComponent(type: CodeLanguage): LazyExoticComponent<ComponentType<CodeRenderProps>> {
+	getComponent(type: CodeLanguage): LazyExoticComponent<ComponentType<CodeRenderProps>> {
 		// 加载并返回组件
-		const codeComponent = CodeComponents[type]
+		const codeComponent = this.codeComponents.get(type)
 
 		// 检查缓存
 		if (codeComponent && this.componentCache.has(codeComponent.componentType)) {
@@ -64,7 +75,7 @@ class CodeRenderFactory {
 	 * 清除缓存
 	 * @param usedTypes 使用过的类型
 	 */
-	static cleanCache(usedTypes: string[]) {
+	cleanCache(usedTypes: string[]) {
 		Array.from(this.componentCache.keys()).forEach((type) => {
 			if (!usedTypes.includes(type)) {
 				this.componentCache.delete(type)
@@ -73,4 +84,4 @@ class CodeRenderFactory {
 	}
 }
 
-export default CodeRenderFactory
+export default new CodeRenderFactory()

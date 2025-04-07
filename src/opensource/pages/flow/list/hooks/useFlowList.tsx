@@ -1,12 +1,12 @@
 import MagicIcon from "@/opensource/components/base/MagicIcon"
 import { RoutePath } from "@/const/routes"
 import type { MagicFlow } from "@dtyq/magic-flow/MagicFlow/types/flow"
-import { IconEdit, IconTrash } from "@tabler/icons-react"
+import { IconEdit, IconTrash, IconEye } from "@tabler/icons-react"
 import { useMemoizedFn, useResetState, useUpdateEffect, useBoolean, useSize } from "ahooks"
 import { message } from "antd"
 import { useNavigate } from "@/opensource/hooks/useNavigate"
 import type { FlowTool } from "@/types/flow"
-import { FlowRouteType, FlowType } from "@/types/flow"
+import { FlowRouteType, FlowType, VectorKnowledge } from "@/types/flow"
 import { useTranslation } from "react-i18next"
 import { useMemo, useRef } from "react"
 import { replaceRouteParams } from "@/utils/route"
@@ -14,15 +14,16 @@ import { openModal } from "@/utils/react"
 import DeleteDangerModal from "@/opensource/components/business/DeleteDangerModal"
 import useSWRInfinite from "swr/infinite"
 import MagicButton from "@/opensource/components/base/MagicButton"
-import { FlowApi } from "@/apis"
+import { FlowApi, KnowledgeApi } from "@/apis"
 import { hasAdminRight } from "../../components/AuthControlButton/types"
 import { useDebounceSearch } from "../../hooks/useDebounceSearch"
+import type { Knowledge } from "@/types/knowledge"
 
 interface FlowListHooksProps {
 	flowType: FlowRouteType
 }
 
-interface FlowWithTools extends MagicFlow.Flow {
+export interface FlowWithTools extends MagicFlow.Flow {
 	tools?: FlowTool.Tool[]
 }
 
@@ -44,15 +45,17 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 
 	const [keyword, setKeyword, resetKeyword] = useResetState("")
 
+	const [vkSearchType, setVkSearchType, resetVkSearchType] =
+		useResetState<VectorKnowledge.SearchType>(VectorKnowledge.SearchType.All)
+
 	const [toolSetId, setToolSetId, resetToolSetId] = useResetState("")
 
 	const [currentTool, setCurrentTool, resetCurrentTool] = useResetState<FlowTool.Tool>(
 		{} as FlowTool.Tool,
 	)
-
-	const [currentFlow, setCurrentFlow, resetCurrentFlow] = useResetState<FlowWithTools>(
-		{} as FlowWithTools,
-	)
+	const [currentFlow, setCurrentFlow, resetCurrentFlow] = useResetState<
+		FlowWithTools | Knowledge.KnowledgeItem
+	>({} as FlowWithTools)
 
 	const scrollRef = useRef<HTMLDivElement | null>(null)
 	const scrollSize = useSize(scrollRef)
@@ -66,8 +69,14 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 
 	// 动态选择接口的 fetcher 函数
 	const fetcher = useMemoizedFn(
-		async (key: { type: FlowRouteType; name: string; page: number; pageSize: number }) => {
-			const { type, ...params } = key
+		async (key: {
+			type: FlowRouteType
+			name: string
+			page: number
+			pageSize: number
+			searchType: VectorKnowledge.SearchType
+		}) => {
+			const { type, searchType, ...params } = key
 			if (type === FlowRouteType.Sub) {
 				const response = await FlowApi.getFlowList({ type: FlowType.Sub, ...params })
 				const { list, page, total } = response
@@ -78,13 +87,21 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 				const { list, page, total } = response
 				return { list, page, total }
 			}
+			if (type === FlowRouteType.Knowledge) {
+				const response = await KnowledgeApi.getKnowledgeList({
+					...params,
+					searchType,
+				})
+				const { list, page, total } = response
+				return { list, page, total }
+			}
 			return { list: [], page: 0, total: 0 }
 		},
 	)
 
 	const getKey = ({ pageIndex, previousPageData, type, name, size }: KeyProp) => {
 		if (previousPageData && !previousPageData.list.length) return null
-		return { page: pageIndex + 1, pageSize: size, type, name } // 请求参数
+		return { page: pageIndex + 1, pageSize: size, type, name, searchType: vkSearchType } // 请求参数
 	}
 
 	const usePaginatedData = (value: string, type: FlowRouteType, size: number) => {
@@ -155,17 +172,26 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 
 	useUpdateEffect(() => {
 		resetKeyword()
+		resetVkSearchType()
 		handleCardCancel()
 	}, [flowType])
 
 	const goToFlow = useMemoizedFn((id) => {
 		if (!id) return
-		navigate(
-			replaceRouteParams(RoutePath.FlowDetail, {
-				id,
-				type: flowType,
-			}),
-		)
+		if (flowType === FlowRouteType.Knowledge) {
+			navigate(
+				replaceRouteParams(RoutePath.FlowKnowledgeDetail, {
+					id,
+				}),
+			)
+		} else {
+			navigate(
+				replaceRouteParams(RoutePath.FlowDetail, {
+					id,
+					type: flowType,
+				}),
+			)
+		}
 	})
 
 	const deleteFlow = useMemoizedFn(async (flow, tool = false) => {
@@ -173,23 +199,31 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 			content: flow.name,
 			needConfirm: false,
 			onSubmit: async () => {
-				if (flowType === FlowRouteType.Tools) {
-					// tool 表示是否为工具,而非工具集
-					if (tool) {
-						// 删除工具
-						await FlowApi.deleteFlow(flow.code)
-					} else {
-						// 删除工具集
-						await FlowApi.deleteTool(flow.id)
-					}
-				} else {
-					// 删除流程
-					await FlowApi.deleteFlow(flow.id)
+				switch (flowType) {
+					case FlowRouteType.Tools:
+						// tool 表示是否为工具,而非工具集
+						if (tool) {
+							// 删除工具
+							await FlowApi.deleteFlow(flow.code)
+						} else {
+							// 删除工具集
+							await FlowApi.deleteTool(flow.id)
+						}
+						break
+					case FlowRouteType.Sub:
+						// 删除子流程
+						await FlowApi.deleteFlow(flow.id)
+						break
+					case FlowRouteType.Knowledge:
+						// 删除知识库
+						await KnowledgeApi.deleteKnowledge(flow.code)
+						break
+					default:
+						break
 				}
-
 				// 更新工具列表
 				if (tool) {
-					let { tools = [] } = currentFlow
+					let { tools = [] } = currentFlow as FlowWithTools
 					tools = tools.filter((n) => n.code !== flow.code)
 					setCurrentFlow(() => {
 						return {
@@ -227,27 +261,44 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 					}, false)
 				}
 				message.success(
-					`${globalT("common.delete", { ns: "flow" })} ${title} ${flow.name} ${globalT("common.success", { ns: "flow" })}`,
+					`${globalT("common.delete", { ns: "flow" })} ${title} ${flow.name} ${globalT(
+						"common.success",
+						{ ns: "flow" },
+					)}`,
 				)
 			},
 		})
 	})
 
 	const updateFlowEnable = useMemoizedFn(async (flow) => {
-		if (flowType === FlowRouteType.Tools) {
-			// 工具集
-			await FlowApi.saveTool({
-				id: flow?.id,
-				name: flow.name,
-				description: flow.description,
-				icon: flow.icon,
-				enabled: !flow.enabled,
-			})
-		} else {
-			// 流程
-			await FlowApi.changeEnableStatus(flow.id)
+		switch (flowType) {
+			case FlowRouteType.Tools:
+				// 工具集
+				await FlowApi.saveTool({
+					id: flow?.id,
+					name: flow.name,
+					description: flow.description,
+					icon: flow.icon,
+					enabled: !flow.enabled,
+				})
+				break
+			case FlowRouteType.Sub:
+				// 流程
+				await FlowApi.changeEnableStatus(flow.id)
+				break
+			case FlowRouteType.Knowledge:
+				// 知识库
+				await KnowledgeApi.updateKnowledge({
+					code: flow.code,
+					name: flow.name,
+					description: flow.description,
+					icon: flow.icon,
+					enabled: !flow.enabled,
+				})
+				break
+			default:
+				break
 		}
-
 		const text = flow.enabled
 			? globalT("common.baned", { ns: "flow" })
 			: globalT("common.enabled", { ns: "flow" })
@@ -273,10 +324,10 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 		if (isTool) {
 			if (update) {
 				// 更新
-				setCurrentFlow((prev: MagicFlow.Flow) => {
+				setCurrentFlow((prev: FlowWithTools | Knowledge.KnowledgeItem) => {
 					return {
 						...prev,
-						tools: prev.tools.map((n: FlowTool.Tool) => {
+						tools: (prev as FlowWithTools)?.tools?.map?.((n: FlowTool.Tool) => {
 							if (n.code === flow.id) {
 								return {
 									...n,
@@ -290,7 +341,7 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 				})
 			} else {
 				// 新增
-				let { tools = [] } = currentFlow
+				let { tools = [] } = currentFlow as FlowWithTools
 				tools = [...tools, { ...flow, code: flow.id }]
 				setCurrentFlow(() => {
 					return {
@@ -314,7 +365,7 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 		} else {
 			// 流程（子流程/工具集）
 			// 更新当前流程
-			setCurrentFlow((prev: MagicFlow.Flow) => {
+			setCurrentFlow((prev: FlowWithTools | Knowledge.KnowledgeItem) => {
 				return {
 					...prev,
 					name: flow.name,
@@ -333,7 +384,7 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 									name: flow.name,
 									description: flow.description,
 									icon: flow.icon,
-								}
+							  }
 							: item,
 					),
 				}))
@@ -346,9 +397,28 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 	// 	message.success(`${t("chat.copy")} ${t("flow.apiKey.success")}`)
 	// })
 
-	const getDropdownItems = useMemoizedFn((flow: MagicFlow.Flow) => {
+	/** 跳转向量知识库详情 */
+	const goToKnowledgeDetail = useMemoizedFn((code: string) => {
+		navigate(`${RoutePath.VectorKnowledgeDetail}?code=${code}`)
+	})
+
+	const getDropdownItems = useMemoizedFn((flow: MagicFlow.Flow | Knowledge.KnowledgeItem) => {
 		return (
 			<>
+				{flowType === FlowRouteType.Knowledge && (
+					<MagicButton
+						justify="flex-start"
+						icon={<MagicIcon component={IconEye} size={20} color="currentColor" />}
+						size="large"
+						type="text"
+						block
+						onClick={() => {
+							goToKnowledgeDetail(flow.code)
+						}}
+					>
+						查看详情
+					</MagicButton>
+				)}
 				<MagicButton
 					justify="flex-start"
 					icon={<MagicIcon component={IconEdit} size={20} color="currentColor" />}
@@ -362,19 +432,6 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 				>
 					{t("flow.changeInfo")}
 				</MagicButton>
-				{/* {flowType !== FlowType.Tools && (
-					<MagicButton
-						justify="flex-start"
-						icon={<MagicIcon component={IconCopy} size={20} color="currentColor" />}
-						size="large"
-						type="text"
-						block
-						onClick={() => handleCopy(flow)}
-					>
-						{t("chat.copy")}
-						{title}
-					</MagicButton>
-				)} */}
 				{hasAdminRight(flow.user_operation) && (
 					<MagicButton
 						justify="flex-start"
@@ -444,7 +501,7 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 		},
 	)
 
-	const handleCardClick = useMemoizedFn((flow: MagicFlow.Flow) => {
+	const handleCardClick = useMemoizedFn((flow: MagicFlow.Flow | Knowledge.KnowledgeItem) => {
 		const checked = currentFlow?.id === flow.id
 		if (checked) {
 			resetCurrentFlow()
@@ -470,6 +527,8 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 		getRightPanelDropdownItems,
 		keyword,
 		setKeyword,
+		vkSearchType,
+		setVkSearchType,
 		loading,
 		flowList,
 		title,

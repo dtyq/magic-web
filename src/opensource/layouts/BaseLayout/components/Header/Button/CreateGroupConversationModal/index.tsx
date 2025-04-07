@@ -28,29 +28,28 @@ function CreateGroupConversationModal({ open, close, ...props }: CreateGroupConv
 	const { styles } = useStyles()
 	const initialValues = useRef(defaultFormValues())
 
-  const navigate = useNavigate()
-
+	const navigate = useNavigate()
 
 	const [form] = useForm<FormValues>()
 	const [organizationChecked, setOrganizationChecked] = useState<OrganizationSelectItem[]>([])
 
-  /**
-   * 关闭弹窗
-   */
-  const closeModal = useMemoizedFn(() => {
-    form.resetFields()
-    setOrganizationChecked([])
-    close?.()
-  })
+	/**
+	 * 关闭弹窗
+	 */
+	const closeModal = useMemoizedFn(() => {
+		form.resetFields()
+		setOrganizationChecked([])
+		close?.()
+	})
 
-  /**
-   * 确认创建
-   */
+	/**
+	 * 确认创建
+	 */
 	const onConfirm = useMemoizedFn(() => {
 		form.validateFields().then((values) => {
 			ChatApi.createGroupConversation(values).then((data) => {
 				const conversationId = data.seq.conversation_id
-				
+
 				ChatApi.getConversationList([conversationId]).then((res) => {
 					const conversation = res.items[0]
 					// 跳转到会话页面
@@ -96,9 +95,9 @@ function CreateGroupConversationModal({ open, close, ...props }: CreateGroupConv
 
 	// const [imageUrl] = useState<string>()
 
-  /**
-   * 取消创建
-   */
+	/**
+	 * 取消创建
+	 */
 	const onCancel = useMemoizedFn(() => {
 		closeModal?.()
 	})

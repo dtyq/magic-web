@@ -39,10 +39,10 @@ const initHighlighter = async (lang: string): Promise<Highlighter> => {
 
 export const useHighlight = (text: string, lang: string = FALLBACK_LANG, isDarkMode?: boolean) =>
 	useSWR(
-		[lang.toLowerCase(), isDarkMode ? "dark" : "light", text].join("-"),
+		[lang?.toLowerCase(), isDarkMode ? "dark" : "light", text].join("-"),
 		async () => {
 			try {
-				const language = lang.toLowerCase()
+				const language = lang?.toLowerCase()
 				const highlighter = await initHighlighter(language)
 				const html = highlighter?.codeToHtml(text, {
 					lang: languageMap.includes(language as any) ? language : FALLBACK_LANG,

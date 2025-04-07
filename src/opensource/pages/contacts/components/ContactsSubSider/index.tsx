@@ -1,4 +1,4 @@
-import { IconChevronRight, IconUsers, IconUserStar } from "@tabler/icons-react"
+import { IconChevronRight, IconUsers } from "@tabler/icons-react"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { MagicList } from "@/opensource/components/MagicList"
@@ -12,7 +12,7 @@ import AutoTooltipText from "@/opensource/components/other/AutoTooltipText"
 import { IconMagicBots } from "@/enhance/tabler/icons-react"
 import type { MagicListItemData } from "@/opensource/components/MagicList/types"
 import { useMemoizedFn } from "ahooks"
-import { useCurrentOrganization } from "@/opensource/models/user/hooks"
+import { useCurrentMagicOrganization } from "@/opensource/models/user/hooks"
 import { useContactStore } from "@/opensource/stores/contact/hooks"
 import MagicSpin from "@/opensource/components/base/MagicSpin"
 import useUserInfo from "@/opensource/hooks/chat/useUserInfo"
@@ -28,7 +28,7 @@ interface CurrentOrganizationProps {
 function CurrentOrganization({ onItemClick }: CurrentOrganizationProps) {
 	const { t } = useTranslation("interface")
 	const { styles } = useStyles()
-	const organization = useCurrentOrganization()
+	const organization = useCurrentMagicOrganization()
 
 	const { userInfo: info } = useUserInfo()
 	const userId = info?.user_id
@@ -75,14 +75,14 @@ function CurrentOrganization({ onItemClick }: CurrentOrganizationProps) {
 			<Flex gap={8}>
 				<MagicAvatar
 					size={42}
-					src={organization.organization_logo?.[0]?.url}
+					// src={organization.organization_logo?.[0]?.url}
 					className={styles.avatar}
 				>
-					{organization.organization_name}
+					{organization.magic_organization_code}
 				</MagicAvatar>
 				<Flex vertical justify="center">
 					<AutoTooltipText className={styles.organizationName}>
-						{organization.organization_name}
+						{organization.magic_organization_code}
 					</AutoTooltipText>
 				</Flex>
 			</Flex>
@@ -180,26 +180,26 @@ function ContactsSubSider() {
 								/>
 							),
 						},
-						{
-							id: "myFriends",
-							route: RoutePath.ContactsMyFriends,
-							title: t("contacts.subSider.followee"),
-							avatar: {
-								icon: <MagicIcon color="currentColor" component={IconUserStar} />,
-								style: {
-									background: colorScales.pink[5],
-									padding: 8,
-									color: "white",
-								},
-							},
-							extra: (
-								<MagicIcon
-									color="currentColor"
-									size={18}
-									component={IconChevronRight}
-								/>
-							),
-						},
+						// {
+						// 	id: "myFriends",
+						// 	route: RoutePath.ContactsMyFriends,
+						// 	title: t("contacts.subSider.followee"),
+						// 	avatar: {
+						// 		icon: <MagicIcon color="currentColor" component={IconUserStar} />,
+						// 		style: {
+						// 			background: colorScales.pink[5],
+						// 			padding: 8,
+						// 			color: "white",
+						// 		},
+						// 	},
+						// 	extra: (
+						// 		<MagicIcon
+						// 			color="currentColor"
+						// 			size={18}
+						// 			component={IconChevronRight}
+						// 		/>
+						// 	),
+						// },
 						{
 							id: "myGroups",
 							route: RoutePath.ContactsMyGroups,

@@ -23,6 +23,14 @@ const TaskItem = observer(({ data, menuItems }: TaskItemProps) => {
 	const { t } = useTranslation("interface")
 	const { styles, cx } = useStyles()
 
+	const RepeatTypeDesc = useMemo(() => {
+		return REPEAT_TYPE_DESC(t)
+	}, [t])
+
+	const UnitsDesc = useMemo(() => {
+		return UNITS_DESC(t)
+	}, [t])
+
 	const taskDesc = useMemo(() => {
 		const { type, day, time, value } = data
 		let deadline = t("chat.timedTask.alwaysRepeat")
@@ -34,7 +42,7 @@ const TaskItem = observer(({ data, menuItems }: TaskItemProps) => {
 			deadline = t("chat.timedTask.weekdayRepeat2")
 		}
 
-		let per = REPEAT_TYPE_DESC[type]
+		let per = RepeatTypeDesc[type]
 		let timeStr = time
 
 		switch (type) {
@@ -55,13 +63,13 @@ const TaskItem = observer(({ data, menuItems }: TaskItemProps) => {
 				timeStr = `${day}${t("calendar.newEvent.repeatOptions.sunday")} ${time}`
 				break
 			case RepeatTypeMap.WEEKDAY_REPEAT:
-				per = REPEAT_TYPE_DESC[RepeatTypeMap.DAILY_REPEAT]
+				per = RepeatTypeDesc[RepeatTypeMap.DAILY_REPEAT]
 				break
 			default:
 				const unit = [Units.MONTH].includes(value?.unit) ? t("chat.timedTask.unit") : ""
-				per = `${REPEAT_TYPE_DESC[type]}${
+				per = `${RepeatTypeDesc[type]}${
 					value?.interval > 1 ? `${value?.interval}${unit}` : ""
-				}${UNITS_DESC[value?.unit]}`
+				}${UnitsDesc[value?.unit]}`
 				switch (value?.unit) {
 					case Units.MONTH:
 						let month: string[] = []
@@ -106,7 +114,7 @@ const TaskItem = observer(({ data, menuItems }: TaskItemProps) => {
 			})
 		}
 		return `${per} ${deadline}`
-	}, [data, t])
+	}, [RepeatTypeDesc, UnitsDesc, data, t])
 
 	const topicName = chatTopicStore.getTopicName(data.topic_id)
 

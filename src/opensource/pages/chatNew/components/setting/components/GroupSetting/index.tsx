@@ -100,6 +100,7 @@ const GroupSetting = observer(() => {
 	 * @param groupName 群组名称
 	 */
 	const onUpdateGroupName = useMemoizedFn((groupName: string) => {
+		console.log("onUpdateGroupName", conversation)
 		return ChatApi.updateGroupInfo({
 			group_id: conversation?.receive_id ?? "",
 			group_name: groupName,
@@ -139,12 +140,12 @@ const GroupSetting = observer(() => {
 
 	const onTopConversationChange = useMemoizedFn((value: boolean) => {
 		if (!conversation) return
-		ConversationService.updateTopStatus(conversation.id, value ? 1 : 0)
+		ConversationService.setTopStatus(conversation.id, value ? 1 : 0)
 	})
 
 	const onNotDisturbConversationChange = useMemoizedFn((value: boolean) => {
 		if (!conversation) return
-		ConversationService.notDisturbConversation(conversation.id, value ? 1 : 0)
+		ConversationService.setNotDisturbStatus(conversation.id, value ? 1 : 0)
 	})
 
 	const listItems = useMemo(() => {
@@ -228,7 +229,9 @@ const GroupSetting = observer(() => {
 	const onSubmitAddMember = useMemoizedFn<(typeof ChatApi)["addGroupUsers"]>((data) => {
 		return ChatApi.addGroupUsers(data)
 			.then(() => mutate())
-			.then(() => useInfoService.fetchUserInfos(data.user_ids ?? [], 2))
+			.then((members = []) =>
+				useInfoService.fetchUserInfos(members.map((item) => item.user_id) ?? [], 2),
+			)
 			.then(() => {
 				message.success(t("chat.groupSetting.addMemberSuccess"))
 			})

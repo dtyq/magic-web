@@ -1,8 +1,8 @@
 import MagicSpin from "@/opensource/components/base/MagicSpin"
-import { Avatar, Flex, Input, List } from "antd"
-import { useEffect, useState } from "react"
-import { FlowRouteType } from "@/types/flow"
-import { useLocation, useParams } from "react-router"
+import { Avatar, Flex, Input, List, Select } from "antd"
+import { useEffect, useMemo, useState } from "react"
+import { FlowRouteType, VectorKnowledge } from "@/types/flow"
+import { useLocation, useParams, useNavigate } from "react-router"
 import FlowEmptyImage from "@/assets/logos/empty-flow.png"
 import ToolsEmptyImage from "@/assets/logos/empty-tools.svg"
 import { IconSearch } from "@tabler/icons-react"
@@ -16,6 +16,10 @@ import useFlowList from "./hooks/useFlowList"
 import FlowCard from "../components/FlowCard"
 import RightDrawer from "./components/RightDrawer"
 import { useStyles } from "./styles"
+import { useMemoizedFn } from "ahooks"
+import { RoutePath } from "@/const/routes"
+import type { Knowledge } from "@/types/knowledge"
+import UpdateKnowledgeModal from "@/opensource/pages/vectorKnowledge/components/UpdateInfoModal"
 
 function FlowListPage() {
 	const { t: globalT } = useTranslation()
@@ -23,6 +27,8 @@ function FlowListPage() {
 	const { type } = useParams()
 
 	const location = useLocation()
+
+	const navigate = useNavigate()
 
 	const { styles, cx } = useStyles()
 
@@ -36,6 +42,8 @@ function FlowListPage() {
 		getRightPanelDropdownItems,
 		keyword,
 		setKeyword,
+		vkSearchType,
+		setVkSearchType,
 		loading,
 		flowList,
 		title,
@@ -59,6 +67,40 @@ function FlowListPage() {
 		flowType,
 	})
 
+	/** 向量知识库搜索类型 */
+	const vkSearchTypeOptions = useMemo(() => {
+		return [
+			{
+				label: globalT("common.all", { ns: "flow" }),
+				value: VectorKnowledge.SearchType.All,
+			},
+			{
+				label: globalT("common.enable", { ns: "flow" }),
+				value: VectorKnowledge.SearchType.Enabled,
+			},
+			{
+				label: globalT("common.disabled", { ns: "flow" }),
+				value: VectorKnowledge.SearchType.Disabled,
+			},
+		]
+	}, [globalT])
+
+	/** 创建知识库 */
+	const handleCreateKnowledge = useMemoizedFn(() => {
+		console.log("handleCreateKnowledge")
+		navigate(RoutePath.VectorKnowledgeCreate)
+	})
+
+	/** 创建工作流 */
+	const createHandler = useMemoizedFn(() => {
+		if (flowType === FlowRouteType.Knowledge) {
+			handleCreateKnowledge()
+		} else {
+			handleCardCancel()
+			openAddOrUpdateFlow()
+		}
+	})
+
 	useEffect(() => {
 		setFlowType(type as FlowRouteType)
 		mutate()
@@ -70,6 +112,14 @@ function FlowListPage() {
 				<Flex align="center" justify="space-between" className={styles.top}>
 					<div className={styles.leftTitle}>{`${title}（${total}）`}</div>
 					<Flex align="center" gap={6}>
+						{flowType === FlowRouteType.Knowledge && (
+							<Select
+								style={{ width: 180 }}
+								options={vkSearchTypeOptions}
+								value={vkSearchType}
+								onChange={(value) => setVkSearchType(value)}
+							/>
+						)}
 						<Input
 							prefix={<IconSearch size={20} color="#b0b0b2" />}
 							value={keyword}
@@ -79,10 +129,7 @@ function FlowListPage() {
 						<MagicButton
 							style={{ borderRadius: 8 }}
 							type="primary"
-							onClick={() => {
-								handleCardCancel()
-								openAddOrUpdateFlow()
-							}}
+							onClick={createHandler}
 						>
 							{t("button.create")}
 							{title}
@@ -117,14 +164,14 @@ function FlowListPage() {
 									{flowList.length === 0
 										? resolveToString(t("common.neverCreate", { ns: "flow" }), {
 												name: title,
-											})
+										  })
 										: resolveToString(t("common.queryNone", { ns: "flow" }), {
 												name: title,
-											})}
+										  })}
 								</div>
 
 								{flowList.length === 0 && (
-									<MagicButton type="primary" onClick={openAddOrUpdateFlow}>
+									<MagicButton type="primary" onClick={createHandler}>
 										{t("button.create")}
 										{title}
 									</MagicButton>
@@ -161,7 +208,9 @@ function FlowListPage() {
 									grid={{ gutter: 8, sm: 2, md: 2, lg: 2, xl: 2, xxl: 2 }}
 									dataSource={flowList}
 									loading={loading}
-									renderItem={(item: MagicFlow.Flow) => {
+									renderItem={(
+										item: MagicFlow.Flow | Knowledge.KnowledgeItem,
+									) => {
 										const dropdownItems = getDropdownItems(item)
 										return (
 											<List.Item className={styles.listItem}>
@@ -183,27 +232,40 @@ function FlowListPage() {
 					</div>
 				</MagicSpin>
 			</Flex>
-			<RightDrawer
-				open={expandPanelOpen}
-				openAddOrUpdateFlow={openAddOrUpdateFlow}
-				onClose={handleCardCancel}
-				data={currentFlow}
-				goToFlow={goToFlow}
-				flowType={flowType}
-				setToolSetId={setToolSetId}
-				getDropdownItems={getRightPanelDropdownItems}
-			/>
-			<AddOrUpdateFlow
-				flow={currentFlow}
-				tool={currentTool}
-				toolSetId={toolSetId}
-				open={addOrUpdateFlowOpen}
-				onClose={handleCloseAddOrUpdateFlow}
-				updateFlowOrTool={updateFlowOrTool}
-				addNewFlow={addNewFlow}
-				flowType={flowType}
-				title={title}
-			/>
+			{flowType !== FlowRouteType.Knowledge && (
+				<RightDrawer
+					open={expandPanelOpen}
+					openAddOrUpdateFlow={openAddOrUpdateFlow}
+					onClose={handleCardCancel}
+					data={currentFlow}
+					goToFlow={goToFlow}
+					flowType={flowType}
+					setToolSetId={setToolSetId}
+					getDropdownItems={getRightPanelDropdownItems}
+				/>
+			)}
+			{flowType !== FlowRouteType.Knowledge && (
+				<AddOrUpdateFlow
+					flow={currentFlow}
+					tool={currentTool}
+					toolSetId={toolSetId}
+					open={addOrUpdateFlowOpen}
+					onClose={handleCloseAddOrUpdateFlow}
+					updateFlowOrTool={updateFlowOrTool}
+					addNewFlow={addNewFlow}
+					flowType={flowType}
+					title={title}
+				/>
+			)}
+			{flowType === FlowRouteType.Knowledge && (
+				<UpdateKnowledgeModal
+					title={title}
+					details={currentFlow}
+					open={addOrUpdateFlowOpen}
+					onClose={handleCloseAddOrUpdateFlow}
+					updateList={updateFlowOrTool}
+				/>
+			)}
 		</Flex>
 	)
 }

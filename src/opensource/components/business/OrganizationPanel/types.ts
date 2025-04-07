@@ -19,7 +19,7 @@ export type OrganizationPanelProps = FormHTMLAttributes<HTMLDivElement> & {
 	selectedPath?: { id: string; name: string }[]
 	onChangeSelectedPath?: (path: { id: string; name: string }[]) => void
 	/** 处理点击子项 */
-	onItemClick?: (node: OrganizationSelectItem, toNextDepartmentLevel: Function) => void
+	onItemClick?: (node: OrganizationSelectItem, toNextDepartmentLevel: () => void) => void
 	/** 子项箭头区域 - 自定义渲染 */
 	itemArrow?: boolean | ((item: StructureItem) => ReactNode)
 	/** 尾部区域 */

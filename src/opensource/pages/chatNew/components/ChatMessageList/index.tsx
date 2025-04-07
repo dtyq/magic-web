@@ -1,5 +1,5 @@
 import { observer, useLocalObservable } from "mobx-react-lite"
-import { useRef, useCallback, useEffect } from "react"
+import { useRef, useCallback, useEffect, lazy, Suspense } from "react"
 import { useMemoizedFn } from "ahooks"
 import MessageStore from "@/opensource/stores/chatNew/message"
 import MessageService from "@/opensource/services/chat/message/MessageService"
@@ -21,7 +21,7 @@ import type {
 	GroupUpdateMessage,
 	GroupDisbandMessage,
 } from "@/types/chat/conversation_message"
-import { ControlEventMessageType } from "@/types/chat"
+import { ControlEventMessageType, MessageReceiveType } from "@/types/chat"
 import { useFontSize } from "@/opensource/providers/AppearanceProvider/hooks"
 import AiConversationMessageLoading from "./components/AiConversationMessageLoading"
 import BackBottom from "./components/BackBottom"
@@ -33,6 +33,11 @@ import GroupUpdateTip from "./components/MessageFactory/components/GroupUpdateTi
 import GroupUsersRemoveTip from "./components/MessageFactory/components/GroupUsersRemoveTip"
 import InviteMemberTip from "./components/MessageFactory/components/InviteMemberTip"
 import MessageItem from "./components/MessageItem"
+import GroupSeenPanelStore, {
+	domClassName as GroupSeenPanelDomClassName,
+} from "@/opensource/stores/chatNew/groupSeenPanel"
+
+const GroupSeenPanel = lazy(() => import("../GroupSeenPanel"))
 
 let canScroll = true
 let lastMessageId = ""
@@ -346,10 +351,19 @@ const ChatMessageList = observer(() => {
 				fileName: target.getAttribute("alt") ?? "",
 			})
 		}
+
+		if (messageElement && messageElement.classList.contains(GroupSeenPanelDomClassName)) {
+			console.log("GroupSeenPanelDomClassName", e.clientX, e.clientY)
+			if (messageId) {
+				GroupSeenPanelStore.openPanel(messageId, { x: e.clientX, y: e.clientY })
+			}
+		} else if (GroupSeenPanelStore.open) {
+			GroupSeenPanelStore.closePanel()
+		}
 	}, [])
 
 	const handleContainerScroll = () =>
-		debounce((e: React.UIEvent<HTMLDivElement>) => {
+		debounce(() => {
 			checkScrollPosition()
 		}, 300)
 
@@ -445,6 +459,11 @@ const ChatMessageList = observer(() => {
 				visible={!state.isAtBottom}
 				onScrollToBottom={() => scrollToLastMessage(true)}
 			/>
+			{conversationStore.currentConversation?.receive_type === MessageReceiveType.Group && (
+				<Suspense fallback={null}>
+					<GroupSeenPanel />
+				</Suspense>
+			)}
 		</div>
 	)
 })

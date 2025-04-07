@@ -39,8 +39,9 @@ class UserInfoService {
 			}),
 		).then((data) => {
 			data.forEach((item) => {
-				userInfoStore.set(item.user_id, item)
+				userInfoStore.set(item.user_id, { ...userInfoStore.get(item.user_id), ...item })
 			})
+			return data
 		})
 	}
 

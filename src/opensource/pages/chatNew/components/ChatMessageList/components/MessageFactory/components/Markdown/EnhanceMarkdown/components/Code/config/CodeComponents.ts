@@ -26,16 +26,6 @@ const codeComponents: Partial<Record<CodeLanguage, CodeRenderComponent>> = {
 		},
 		loader: () => import("../components/Mermaid"),
 	},
-	[CodeLanguage.OssFile]: {
-		componentType: CodeLanguage.OssFile,
-		propsParser: (props) => {
-			return {
-				...props,
-				language: props.language,
-			}
-		},
-		loader: () => import("../components/OssFile"),
-	},
 	[CodeLanguage.Markdown]: {
 		componentType: CodeLanguage.Markdown,
 		propsParser: (props) => {

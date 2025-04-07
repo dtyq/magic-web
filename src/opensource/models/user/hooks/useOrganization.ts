@@ -22,6 +22,9 @@ export function useOrganization() {
 				teamshareOrganizationCode: userStore.user.teamshareOrganizationCode,
 			}),
 			(org) => setOrganizationMeta(org),
+			{
+				fireImmediately: true,
+			},
 		)
 	}, [])
 

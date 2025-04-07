@@ -78,13 +78,10 @@ class MessageDbService {
 	 */
 	async createMessageTables(conversationIds: string[]) {
 		await chatDb.changeSchema(
-			conversationIds.reduce(
-				(acc, id) => {
-					acc[this.genMessageTableName(id)] = this.messageTableSchema
-					return acc
-				},
-				{} as Record<string, string>,
-			),
+			conversationIds.reduce((acc, id) => {
+				acc[this.genMessageTableName(id)] = this.messageTableSchema
+				return acc
+			}, {} as Record<string, string>),
 		)
 	}
 
@@ -158,7 +155,17 @@ class MessageDbService {
 				throw new Error("Failed to get message table")
 			}
 
-			await Promise.all(messageList.map((message) => table.put(message)))
+			await Promise.all(
+				messageList.map((message) =>
+					// 如果消息已存在，则不添加
+					table.add(message).catch((err) => {
+						if (err.message.includes("already exists")) {
+							return
+						}
+						throw err
+					}),
+				),
+			)
 			return { success: true, count: messageList.length }
 		} catch (error) {
 			// 记录错误信息
@@ -362,18 +369,29 @@ class MessageDbService {
 	 * @param messageId 消息ID
 	 * @param message 消息
 	 */
-	async updateMessageStatus(
+	updateMessageStatus(
 		conversationId: string,
 		messageId: string,
 		message: SeqResponse<SeenMessage>,
 	) {
-		const table = await this.getMessageTable(conversationId)
-		if (table) {
-			table.update(messageId, {
-				"message.status": message.message.unread_count > 0 ? message.message.status : ConversationMessageStatus.Read,
-				"message.unread_count": message.message.unread_count,
-			})
-		}
+		this.getMessageTable(conversationId).then((table) => {
+			if (table) {
+				table
+					.update(messageId, {
+						"message.status":
+							message.message.unread_count > 0
+								? message.message.status
+								: ConversationMessageStatus.Read,
+						"message.unread_count": message.message.unread_count,
+					})
+					.then((res) => {
+						console.log("updateMessageStatus success", res)
+					})
+					.catch((err) => {
+						console.error("updateMessageStatus error", err)
+					})
+			}
+		})
 	}
 
 	/**
@@ -382,13 +400,21 @@ class MessageDbService {
 	 * @param messageId 消息ID
 	 * @param unreadCount 未读数
 	 */
-	async updateMessageUnreadCount(conversationId: string, messageId: string, unreadCount: number) {
-		const table = await this.getMessageTable(conversationId)
-		if (table) {
-			table.update(messageId, {
-				"message.unread_count": unreadCount,
-			})
-		}
+	updateMessageUnreadCount(conversationId: string, messageId: string, unreadCount: number) {
+		this.getMessageTable(conversationId).then((table) => {
+			if (table) {
+				table
+					.update(messageId, {
+						"message.unread_count": unreadCount,
+					})
+					.then((res) => {
+						console.log("updateMessageUnreadCount success", res, messageId)
+					})
+					.catch((err) => {
+						console.error("updateMessageUnreadCount error", err)
+					})
+			}
+		})
 	}
 
 	/**

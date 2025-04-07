@@ -19,3 +19,26 @@ export function splitNumber(
 	// 返回格式化后的数值
 	return parts.join(".")
 }
+
+/**
+ * 将大于1000的数值格式化为K结尾的形式
+ * @param number 要格式化的数值
+ * @returns 格式化后的字符串，无效数值返回空字符串
+ */
+export function formatToK(number: number): string {
+	// 检查参数是否为有效数值
+	if (Number.isNaN(number) || !Number.isFinite(number)) {
+		return ""
+	}
+
+	// 不超过1000的直接返回字符串形式
+	if (number < 1000) {
+		return number.toString()
+	}
+
+	// 计算以K为单位的值（向下取整）
+	const kValue = Math.floor(number / 1000)
+
+	// 返回格式化后的值，以K结尾
+	return `${kValue}K`
+}

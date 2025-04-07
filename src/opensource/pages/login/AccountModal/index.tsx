@@ -5,7 +5,7 @@ import AppearanceProvider from "@/opensource/providers/AppearanceProvider"
 import GlobalErrorBoundary from "@/opensource/components/fallback/GlobalErrorBoundary"
 import { BrowserRouter } from "react-router-dom"
 import { ClusterProvider } from "@/opensource/providers/ClusterProvider"
-import GlobalChatProvider from "@/opensource/providers/ChatProvider/derives/GlobalChatProvider"
+import GlobalChatProvider from "@/opensource/providers/ChatProvider"
 import AccountModal from "./AccountModal"
 
 import { loginService } from "./service"

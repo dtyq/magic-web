@@ -2,13 +2,13 @@ import { memo, useEffect, useMemo, useRef, useState } from "react"
 import mermaid from "mermaid"
 import { useTranslation } from "react-i18next"
 import { useThemeMode } from "antd-style"
-import { nanoid } from "nanoid"
 import { Flex } from "antd"
 import { useStyles } from "./styles"
 import { MagicMermaidType } from "./constants"
 import type { MagicMermaidProps } from "./types"
 import MagicSegmented from "@/opensource/components/base/MagicSegmented"
 import MagicCode from "@/opensource/components/base/MagicCode"
+import { nanoid } from "nanoid"
 
 const MagicMermaid = memo(function MagicMermaid({
 	data,
@@ -43,19 +43,25 @@ const MagicMermaid = memo(function MagicMermaid({
 	const [isError, setIsError] = useState<string | null>(null)
 
 	useEffect(() => {
-		if (data) {
-			mermaid.initialize({ startOnLoad: false, darkMode: isDarkMode })
-			if (mermaidRef.current) {
-				mermaidRef.current.innerHTML = data
-			}
+		if (data && mermaidRef.current) {
+			mermaid.initialize({
+				startOnLoad: false,
+				theme: "default",
+				securityLevel: "loose",
+				suppressErrorRendering: false,
+			})
 
+			mermaidRef.current.innerHTML = data
 			mermaid
-				.render(`${id.current}`, data)
+				.render(id.current, data)
 				.then(({ svg }) => {
-					if (mermaidRef.current) {
+					if (svg && mermaidRef.current) {
 						mermaidRef.current.innerHTML = svg
-						setIsError(null)
 						setType(MagicMermaidType.Mermaid)
+						setIsError(null)
+					} else {
+						setIsError(t("chat.mermaid.error"))
+						setType(MagicMermaidType.Code)
 					}
 				})
 				.catch((err) => {
@@ -64,7 +70,7 @@ const MagicMermaid = memo(function MagicMermaid({
 					console.error("Mermaid failed to initialize", err)
 				})
 		}
-	}, [data, isDarkMode])
+	}, [data, isDarkMode, t])
 
 	return (
 		<div
@@ -78,15 +84,15 @@ const MagicMermaid = memo(function MagicMermaid({
 				</Flex>
 			)}
 			<div className={styles.mermaid}>
-				{isError ? (
-					<span className={styles.error}>{t("chat.mermaid.error")}</span>
-				) : (
-					<div
-						ref={mermaidRef}
-						className={cx(id.current, styles.mermaidInnerWrapper)}
-						onClick={() => onClick?.(mermaidRef.current)}
-					/>
-				)}
+				<span style={{ display: isError ? "block" : "none" }} className={styles.error}>
+					{t("chat.mermaid.error")}
+				</span>
+				<div
+					ref={mermaidRef}
+					style={{ display: isError ? "none" : "block" }}
+					className={cx(id.current, styles.mermaidInnerWrapper)}
+					onClick={() => onClick?.(mermaidRef.current)}
+				/>
 			</div>
 			<MagicCode className={styles.code} data={data} copyText={copyText} />
 		</div>

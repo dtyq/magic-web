@@ -17,6 +17,7 @@ import { useUpload } from "@/opensource/hooks/useUploadFiles"
 import { genFileData } from "@/opensource/pages/chatNew/components/MessageEditor/MagicInput/components/InputFiles/utils"
 import { useBotStore } from "@/opensource/stores/bot"
 import { FlowApi } from "@/apis"
+import type { Knowledge } from "@/types/knowledge"
 
 type AddOrUpdateFlowForm = Pick<MagicFlow.Flow, "name" | "description"> & {
 	icon: string
@@ -26,7 +27,7 @@ type AddOrUpdateFlowProps = {
 	flowType: FlowRouteType
 	title: string
 	open: boolean
-	flow?: MagicFlow.Flow
+	flow?: MagicFlow.Flow | Knowledge.KnowledgeItem
 	tool?: FlowTool.Tool
 	toolSetId?: string
 	onClose: () => void
@@ -158,7 +159,6 @@ function AddOrUpdateFlow({
 	})
 
 	const onFileChange = useMemoizedFn(async (fileList: FileList) => {
-		// setFiles((l) => [...l, ...Array.from(fileList).map(genFileData)])
 		const newFiles = Array.from(fileList).map(genFileData)
 		// 先上传文件
 		const { fullfilled } = await uploadAndGetFileUrl(newFiles)

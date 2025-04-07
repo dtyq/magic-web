@@ -34,12 +34,23 @@ export function registerRoutes(): Array<RouteObject> {
 	const FlowExplore = lazy(() => import("@/opensource/pages/explore"))
 	/** AI助力 */
 	const FlowAgent = lazy(() => import("@/opensource/pages/flow/agent"))
-	/** 流程列表(工作流/子流程/工具) */
+	/** 流程列表(工作流/子流程/工具/知识库) */
 	const FlowList = lazy(() => import("@/opensource/pages/flow/list"))
-	/** 知识库列表 */
-	const FlowKnowledge = lazy(() => import("@/opensource/pages/flow/knowledge"))
 	/** 知识库详情 */
 	const FlowKnowledgeDetail = lazy(() => import("@/opensource/pages/flow/knowledge/[id]"))
+
+	/**
+	 * @description 向量知识库模块
+	 */
+	const VectorKnowledgeLayout = lazy(() => import("@/opensource/pages/vectorKnowledge/layouts"))
+	/** 创建 */
+	const VectorKnowledgeCreate = lazy(
+		() => import("@/opensource/pages/vectorKnowledge/components/Create"),
+	)
+	/** 详情 */
+	const VectorKnowledgeDetail = lazy(
+		() => import("@/opensource/pages/vectorKnowledge/components/Details"),
+	)
 
 	/** 全局设置 */
 	const Settings = lazy(() => import("../pages/settings/Settings.page"))
@@ -96,16 +107,26 @@ export function registerRoutes(): Array<RouteObject> {
 							element: <FlowAgent />,
 						},
 						{
-							path: RoutePath.FlowKnowledgeList,
-							element: <FlowKnowledge />,
-						},
-						{
 							path: RoutePath.Flows,
 							element: <FlowList />,
 						},
 						{
 							path: RoutePath.FlowKnowledgeDetail,
 							element: <FlowKnowledgeDetail />,
+						},
+					],
+				},
+				{
+					path: RoutePath.VectorKnowledge,
+					element: <VectorKnowledgeLayout />,
+					children: [
+						{
+							path: RoutePath.VectorKnowledgeCreate,
+							element: <VectorKnowledgeCreate />,
+						},
+						{
+							path: RoutePath.VectorKnowledgeDetail,
+							element: <VectorKnowledgeDetail />,
 						},
 					],
 				},

@@ -133,8 +133,9 @@ export const generateContactApi = (fetch: HttpClient) => ({
 		data: { user_ids: string[]; page_token?: string; query_type?: 1 | 2 },
 		init?: RequestInit,
 	) {
-		return fetch.get<PaginationResponse<StructureUserItem>>(
-			genRequestUrl(RequestUrl.getUserInfoByIds, {}, data),
+		return fetch.post<PaginationResponse<StructureUserItem>>(
+			genRequestUrl(RequestUrl.getUserInfoByIds),
+			data,
 			{
 				...init,
 			},

@@ -227,10 +227,12 @@ export const generateChatApi = (fetch: HttpClient, socket: ChatWebSocket) => ({
 	 * @returns
 	 */
 	getMagicTopicName(conversation_id: string, id: string) {
-		return fetch.post<GetMagicTopicNameResponse>(genRequestUrl(RequestUrl.getMagicTopicName), {
-			conversation_id,
-			id,
-		})
+		return fetch.put<GetMagicTopicNameResponse>(
+			genRequestUrl(RequestUrl.getMagicTopicName, {
+				conversationId: conversation_id,
+				topicId: id,
+			}),
+		)
 	},
 
 	/**
@@ -408,7 +410,10 @@ export const generateChatApi = (fetch: HttpClient, socket: ChatWebSocket) => ({
 	 * @returns
 	 */
 	updateGroupInfo(data: { group_id: string; group_name?: string; group_avatar?: string }) {
-		return fetch.put<GroupConversationDetail>(genRequestUrl(RequestUrl.updateGroupInfo), data)
+		return fetch.put<GroupConversationDetail>(
+			genRequestUrl(RequestUrl.updateGroupInfo, { id: data.group_id }),
+			data,
+		)
 	},
 
 	/**

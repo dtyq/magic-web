@@ -63,9 +63,9 @@ export const generateAuthApi = (fetch: HttpClient) => ({
 	 */
 	getAccountDeployCode() {
 		if (!isCommercial()) {
-			return { login_code: "" }
+			return { login_code: "", teamshare_login_code: "" }
 		}
-		return fetch.get<{ login_code: string }>(genRequestUrl(RequestUrl.getDeploymentCode))
+		return fetch.get<{ login_code: string, teamshare_login_code?: string }>(genRequestUrl(RequestUrl.getDeploymentCode))
 	},
 
 	/**

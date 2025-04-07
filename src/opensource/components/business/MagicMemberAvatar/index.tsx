@@ -33,7 +33,6 @@ const MagicMemberAvatar = observer(
 
 		const { styles } = useStyles({ nameVisible: showName })
 
-		console.log("userInfo ======> ", userInfo)
 		const name = getUserName(userInfo) ?? ""
 
 		const Children: React.ReactNode =

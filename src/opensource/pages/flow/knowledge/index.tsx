@@ -14,7 +14,7 @@ import { RoutePath } from "@/const/routes"
 import { replaceRouteParams } from "@/utils/route"
 import { useTranslation } from "react-i18next"
 import { KnowledgeApi } from "@/apis"
-import AddOrUpdateKnowledge from "./components/AddOrUpdateKnowledge"
+import UpdateKnowledge from "./components/UpdateKnowledge"
 import EnableCell from "./components/EnableCell"
 import RecordMenu from "./components/RecordMenu"
 import AuthControlButton from "../components/AuthControlButton/AuthControlButton"
@@ -184,7 +184,7 @@ export default function FlowKnowledge() {
 					<MagicSearch className={styles.search} />
 				</Flex>
 				<Flex align="center">
-					<AddOrUpdateKnowledge initKnowledgeList={initKnowledgeList} />
+					<UpdateKnowledge initKnowledgeList={initKnowledgeList} />
 				</Flex>
 			</Flex>
 			<MagicSpin section spinning={false} wrapperClassName={styles.wrapper}>

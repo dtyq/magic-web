@@ -56,7 +56,7 @@ export class UserStore {
 		const { organizations, magicOrganizationMap } = this
 		const orgMap = keyBy(organizations, "organization_code")
 		// 获取 teamshare 组织 Code
-		return orgMap?.[magicOrganizationMap?.[organizationCode]?.third_platform_organization_code]
+		return orgMap?.[magicOrganizationMap?.[organizationCode]?.third_platform_organization_code ?? ""]
 	}
 
 	/**
@@ -72,7 +72,9 @@ export class UserStore {
 		// 根据 magic 组织 Code 尝试获取组织
 		if (organizationCode) {
 			org =
-				orgMap?.[magicOrganizationMap?.[organizationCode]?.third_platform_organization_code]
+				orgMap?.[
+					magicOrganizationMap?.[organizationCode]?.third_platform_organization_code ?? ""
+				]
 		}
 		if (!org && teamshareOrganizationCode) {
 			org = orgMap?.[teamshareOrganizationCode]

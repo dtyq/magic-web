@@ -9,10 +9,6 @@ import { UserType } from "@/types/user"
 import { useMemo, useRef } from "react"
 import MagicSegmented from "@/opensource/components/base/MagicSegmented"
 import { useMemoizedFn } from "ahooks"
-import { DriveItemFileType } from "@/types/drive"
-import { useContactStore } from "@/opensource/stores/contact/hooks"
-import { openNewTab } from "@/utils/route"
-import { getDriveFileRedirectUrl } from "@/utils/drive"
 import { useChatWithMember } from "@/opensource/hooks/chat/useChatWithMember"
 import MemberCardStore from "@/opensource/stores/display/MemberCardStore"
 import { observer } from "mobx-react-lite"
@@ -33,8 +29,8 @@ const MemberCard = observer(() => {
 
 	const { styles, cx } = useStyles({
 		open: MemberCardStore.open,
-    animationDuration: MemberCardStore.animationDuration,
-    hidden: !userInfo,
+		animationDuration: MemberCardStore.animationDuration,
+		hidden: !userInfo,
 	})
 
 	const { organizations } = useOrganization()
@@ -45,26 +41,6 @@ const MemberCard = observer(() => {
 	const userType = userInfo?.user_type
 	const isAi = userType === UserType.AI
 	const isNormalPerson = userType === UserType.Normal
-
-	const { trigger } = useContactStore((s) => s.useUserManual)()
-
-	const toDoc = useMemoizedFn((docId: string) => {
-		const path = getDriveFileRedirectUrl(docId, DriveItemFileType.CLOUD_DOCX)
-		const url = window.location.origin
-		openNewTab(path, url)
-	})
-
-  const handleCheck = useMemoizedFn(async () => {
-    if (!userInfo) return
-
-		if (userInfo?.user_manual) {
-			toDoc(userInfo.user_manual)
-			return
-		}
-
-		const response = await trigger({ user_id: userInfo.user_id })
-    if (typeof response === "string") toDoc(response)
-	})
 
 	const items = useMemo(() => {
 		if (!userInfo) return []
@@ -114,20 +90,11 @@ const MemberCard = observer(() => {
 						label: t("memberCard.phone"),
 						children: userInfo.phone,
 					},
-					{
-						key: "selfSpecification",
-						label: t("memberCard.selfSpecification"),
-						children: (
-							<MagicButton size="small" type="link" onClick={handleCheck}>
-								{t("memberCard.viewSelfSpecification")}
-							</MagicButton>
-						),
-					},
 				]
 			default:
 				return []
 		}
-	}, [organization?.organization_name, handleCheck, t, userInfo, userType])
+	}, [organization?.organization_name, t, userInfo, userType])
 
 	const options = useMemo(() => {
 		return [
@@ -137,23 +104,24 @@ const MemberCard = observer(() => {
 		]
 	}, [t])
 
-  const chatWith = useChatWithMember()
+	const chatWith = useChatWithMember()
 
-  const handleChatWith = useMemoizedFn(() => {
-    if (!userInfo) return
-    chatWith(userInfo.user_id)
-    MemberCardStore.closeCard(true)
-  })
+	const handleChatWith = useMemoizedFn(() => {
+		if (!userInfo) return
+		chatWith(userInfo.user_id)
+		MemberCardStore.closeCard(true)
+	})
 
 	return (
-    <Flex
-      className={cx(styles.container, styles.animation)}
-      vertical gap={14}
-      ref={containerRef}
-      style={{ top: MemberCardStore.position.y, left: MemberCardStore.position.x }}
-      onMouseEnter={() => MemberCardStore.setIsHover(true)}
-      onMouseLeave={() => MemberCardStore.setIsHover(false)}
-    >
+		<Flex
+			className={cx(styles.container, styles.animation)}
+			vertical
+			gap={14}
+			ref={containerRef}
+			style={{ top: MemberCardStore.position.y, left: MemberCardStore.position.x }}
+			onMouseEnter={() => MemberCardStore.setIsHover(true)}
+			onMouseLeave={() => MemberCardStore.setIsHover(false)}
+		>
 			{/* 头部卡片 */}
 			<Flex vertical className={styles.header} gap={10}>
 				<Flex className={styles.headerTop} gap={14} align="center">

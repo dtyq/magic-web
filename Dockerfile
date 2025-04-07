@@ -1,6 +1,6 @@
 # ===== 基础镜像配置 =====
-# 基础镜像: node:22-alpine
-ARG NODE_IMAGE=node:22-alpine
+# 基础镜像: node:18-alpine
+ARG NODE_IMAGE=node:18-alpine
 # =================================================
 
 # build
@@ -8,7 +8,7 @@ FROM ${NODE_IMAGE} as builder
 
 WORKDIR /app
 
-COPY turbo.json package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
 COPY ./packages ./packages
 
 RUN npm install pnpm --location=global && \

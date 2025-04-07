@@ -21,7 +21,12 @@ const ChatMenuContent = observer(({ conversationId }: ChatMenuProps) => {
 	const conversation = conversations[conversationId]
 	switch (conversation?.receive_type) {
 		case MessageReceiveType.Ai:
-			return <AiPopoverContent conversationId={conversationId} />
+			return (
+				<AiPopoverContent
+					receiveId={conversation?.receive_id}
+					conversationId={conversationId}
+				/>
+			)
 		case MessageReceiveType.User:
 			return <UserPopoverContent conversationId={conversationId} />
 		case MessageReceiveType.Group:
@@ -31,7 +36,7 @@ const ChatMenuContent = observer(({ conversationId }: ChatMenuProps) => {
 	}
 })
 
-const ChatMenu = memo(({ conversationId, children, ...props }: ChatMenuProps) => {
+const ChatMenu = memo(function ChatMenu({ conversationId, children, ...props }: ChatMenuProps) {
 	const { styles } = useStyles()
 
 	return (

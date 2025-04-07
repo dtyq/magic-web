@@ -105,7 +105,7 @@
 // 						deployCode,
 // 						teamshareOrganizationCode,
 // 					)
-// 					const magicOrganizationMap = keyBy(result, "teamshare_organization_code")
+// 					const magicOrganizationMap = keyBy(result, "third_platform_organization_code")
 // 					return { access_token, magicOrganizationMap }
 // 				} catch (error: any) {
 // 					console.log("error", error)
@@ -165,11 +165,11 @@
 //
 // 				// 获取到 teamshare 的组织后，需要针对上步 magicOrganizationMap 进行合法性过滤(因后端没处理 magicOrganizationMap 数据的合法性，所以这里需要根据 teamshare 中不存在的组织过滤 magicOrganizationMap)
 // 				const magicOrganizationArray = Object.values(allMagicOrganizationMap).filter((o) =>
-// 					teamshareOrgsCode.includes(o.teamshare_organization_code),
+// 					teamshareOrgsCode.includes(o.third_platform_organization_code),
 // 				)
 // 				const magicOrganizationMap = keyBy(
 // 					magicOrganizationArray,
-// 					"teamshare_organization_code",
+// 					"third_platform_organization_code",
 // 				)
 // 				const teamshareOrgMap = keyBy(magicOrganizationArray, "magic_organization_code")
 //
@@ -197,7 +197,7 @@
 // 					organizations,
 // 					organizationCode: magicOrgCode,
 // 					teamshareOrganizationCode:
-// 						teamshareOrgMap[magicOrgCode ?? ""]?.teamshare_organization_code,
+// 						teamshareOrgMap[magicOrgCode ?? ""]?.third_platform_organization_code,
 // 				}
 // 			} catch (error: any) {
 // 				const newMessage = `organizationFetchStep: ${error.message}`
@@ -231,7 +231,7 @@
 // 				const magicOrgs = Object.values(magicOrganizationMap)
 //
 // 				const orgCode =
-// 					teamshareOrganizationCode ?? magicOrgs?.[0]?.teamshare_organization_code
+// 					teamshareOrganizationCode ?? magicOrgs?.[0]?.third_platform_organization_code
 // 				if (orgCode) {
 // 					const userInfo = await getUserInfo(
 // 						magicOrganizationMap?.[orgCode]?.magic_user_id,

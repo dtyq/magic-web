@@ -7,6 +7,7 @@ import type { FlowTool } from "@/types/flow"
 import type { MagicFlow } from "@dtyq/magic-flow/MagicFlow/types/flow"
 import type { DrawerItem, DataType } from "../RightDrawer"
 import useStyles from "./style"
+import type { FlowWithTools } from "../../hooks/useFlowList"
 
 interface ToolCardProps {
 	data: DataType
@@ -62,7 +63,7 @@ const Card = memo(
 							)}
 							<OperateMenu
 								useIcon
-								menuItems={getDropdownItems(item.rawData!, data)}
+								menuItems={getDropdownItems(item.rawData!, data as FlowWithTools)}
 							/>
 						</Flex>
 					)}
@@ -75,7 +76,7 @@ const Card = memo(
 
 const ToolCard = memo((props: ToolCardProps) => {
 	const { item, data, hasEditRight, getDropdownItems } = props
-	const menuItems = getDropdownItems(item.rawData!, data)
+	const menuItems = getDropdownItems(item.rawData!, data as FlowWithTools)
 	const shouldShowMenu = item.more && hasEditRight(data.user_operation)
 
 	return shouldShowMenu ? (

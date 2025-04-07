@@ -18,12 +18,7 @@ import { useContactStore } from "@/opensource/stores/contact/hooks"
 import MagicSpin from "@/opensource/components/base/MagicSpin"
 import type { CheckboxChangeEvent } from "antd/es/checkbox"
 import { isArray } from "lodash-es"
-import { useCurrentOrganization } from "@/opensource/models/user/hooks"
-import MagicButton from "@/opensource/components/base/MagicButton"
-import IconMagicFile from "@/enhance/tabler/icons-react/icons/IconMagicFile"
-import { DriveItemFileType } from "@/types/drive"
-import { getDriveFileRedirectUrl } from "@/utils/drive"
-import { openNewTab } from "@/utils/route"
+import { useCurrentMagicOrganization } from "@/opensource/models/user/hooks"
 import MagicScrollBar from "@/opensource/components/base/MagicScrollBar"
 import { isDepartment, isMember } from "./utils"
 import Member from "./components/Member"
@@ -44,7 +39,6 @@ const OrganizationPanel = memo(function OrganizationPanel(props: OrganizationPan
 		showMember = true,
 		memberExtra,
 		checkboxOptions,
-		showInstructions = false,
 		memberNodeWrapper = (node) => node,
 		style,
 	} = props
@@ -52,8 +46,6 @@ const OrganizationPanel = memo(function OrganizationPanel(props: OrganizationPan
 	const { t } = useTranslation("interface")
 
 	const { styles } = useStyles()
-
-	const { trigger } = useContactStore((s) => s.useDepartmentManual)()
 
 	const [selectedPath = [], setSelectPath] = useControllableValue<{ id: string; name: string }[]>(
 		props,
@@ -64,10 +56,6 @@ const OrganizationPanel = memo(function OrganizationPanel(props: OrganizationPan
 			trigger: "onChangeSelectedPath",
 		},
 	)
-
-	const shouldShowInstruct = useMemo(() => {
-		return showInstructions && selectedPath?.length > 0
-	}, [selectedPath, showInstructions])
 
 	useUpdateEffect(() => {
 		if (props?.defaultSelectedPath) setSelectPath(props.defaultSelectedPath)
@@ -110,7 +98,7 @@ const OrganizationPanel = memo(function OrganizationPanel(props: OrganizationPan
 		[data.departments, data.users],
 	)
 
-	const organization = useCurrentOrganization()
+	const organization = useCurrentMagicOrganization()
 
 	const emptyNode = useMemo(() => {
 		return isLoading ? null : (
@@ -232,15 +220,6 @@ const OrganizationPanel = memo(function OrganizationPanel(props: OrganizationPan
 		}
 	})
 
-	const handleCheckDoc = useMemoizedFn(async () => {
-		const response = await trigger({ department_id: selectedPath[selectedPath.length - 1].id })
-		if (typeof response === "string") {
-			const path = getDriveFileRedirectUrl(response, DriveItemFileType.CLOUD_DOCX)
-			const url = window.location.origin
-			openNewTab(path, url)
-		}
-	})
-
 	/**
 	 * 面包屑导航
 	 */
@@ -248,11 +227,11 @@ const OrganizationPanel = memo(function OrganizationPanel(props: OrganizationPan
 		return (
 			<Flex className={styles.breadcrumb} align="center" gap={4} wrap="wrap">
 				<MagicAvatar
-					src={organization?.organization_logo?.[0]?.url}
+					// src={organization?.organization_logo?.[0]?.url}
 					size={42}
 					className={styles.avatar}
 				>
-					{organization?.organization_name}
+					{organization?.magic_organization_code}
 				</MagicAvatar>
 
 				<Flex flex={1} align="center" style={{ flexWrap: "wrap" }}>
@@ -260,7 +239,7 @@ const OrganizationPanel = memo(function OrganizationPanel(props: OrganizationPan
 						className={styles.breadcrumbItem}
 						onClick={() => enchancedSetSelectPath([])}
 					>
-						{organization?.organization_name ?? t("organization.root")}
+						{organization?.magic_organization_code ?? t("organization.root")}
 					</span>
 					{selectedPath?.map((item, index) => {
 						const arrowKey = `arrow-${index}`
@@ -280,29 +259,15 @@ const OrganizationPanel = memo(function OrganizationPanel(props: OrganizationPan
 						)
 					})}
 				</Flex>
-				{shouldShowInstruct && (
-					<MagicButton
-						onClick={handleCheckDoc}
-						type="text"
-						icon={<IconMagicFile />}
-						className={styles.button}
-					>
-						{t("organization.instruction")}
-					</MagicButton>
-				)}
 			</Flex>
 		)
 	}, [
 		styles.breadcrumb,
 		styles.avatar,
 		styles.breadcrumbItem,
-		styles.button,
-		organization?.organization_logo,
-		organization?.organization_name,
+		organization?.magic_organization_code,
 		t,
 		selectedPath,
-		shouldShowInstruct,
-		handleCheckDoc,
 		enchancedSetSelectPath,
 		handleClickNavigateItem,
 	])

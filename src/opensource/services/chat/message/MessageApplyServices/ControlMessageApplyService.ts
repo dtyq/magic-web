@@ -6,6 +6,7 @@ import type { SeqResponse } from "@/types/request"
 // 导入新的服务
 import ConversationService from "@/opensource/services/chat/conversation/ConversationService"
 import chatTopicService from "@/opensource/services/chat/topic"
+import userInfoService from "@/opensource/services/userInfo"
 
 // 导入存储状态管理
 import conversationStore from "@/opensource/stores/chatNew/conversation"
@@ -23,6 +24,7 @@ import type {
 import type { SeenMessage } from "@/types/chat/seen_message"
 import type { CreateTopicMessage, UpdateTopicMessage, DeleteTopicMessage } from "@/types/chat/topic"
 import { ConversationStatus } from "@/types/chat/conversation"
+import { MessageReceiveType } from "@/types/chat"
 import groupInfoService from "@/opensource/services/groupInfo"
 import MessageService from "../MessageService"
 import { userStore } from "@/opensource/models/user"
@@ -184,14 +186,16 @@ class ControlMessageApplyService {
 	 * 应用群组移除用户消息
 	 * @param message 群组移除用户消息对象
 	 */
-	applyGroupUsersRemoveMessage(message: SeqResponse<GroupUsersRemoveMessage>) {
-		MessageService.addReceivedMessage(message)
+	async applyGroupUsersRemoveMessage(message: SeqResponse<GroupUsersRemoveMessage>) {
 		const userId = userStore.user.userInfo?.user_id
 		if (this.isSelfLeaveGroup(message.message, userId)) {
 			// 自己退群(处理方式可能待优化)
 			// 直接移除群聊
 			ConversationService.deleteConversation(message.conversation_id)
 		}
+		// 先获取用户信息，避免用户信息未加载
+		await userInfoService.fetchUserInfos(message.message.group_users_remove.user_ids ?? [], 2)
+		MessageService.addReceivedMessage(message)
 	}
 
 	/**
@@ -242,6 +246,11 @@ class ControlMessageApplyService {
 			// 获取会话列表
 			ChatApi.getConversationList([message.conversation_id]).then(({ items }) => {
 				if (items.length === 0) return
+				console.log("applyOpenConversationMessage items", items)
+				// 如果是单聊，尝试获取用户信息
+				if (items[0].receive_type === MessageReceiveType.User) {
+					userInfoService.fetchUserInfos([items[0].receive_id], 2)
+				}
 				ConversationService.addNewConversation(items[0])
 			})
 		}

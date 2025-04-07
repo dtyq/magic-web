@@ -25,6 +25,7 @@ const useStyles = createStyles(({ token, css }) => {
 
 interface UploadButtonProps extends MagicButtonProps {
 	icon?: React.ReactNode
+	text?: string
 	imStyle?: IMStyle
 	loading?: boolean
 	onFileChange?: (files: FileList) => void
@@ -32,6 +33,7 @@ interface UploadButtonProps extends MagicButtonProps {
 
 function UploadButton({
 	icon,
+	text,
 	imStyle: theme = IMStyle.Modern,
 	onFileChange,
 	loading,
@@ -49,7 +51,7 @@ function UploadButton({
 				icon={icon || <MagicIcon size={20} component={IconCloudUpload} />}
 				{...props}
 			>
-				{t("agent.upload")}
+				{text || t("agent.upload")}
 			</MagicButton>
 		)
 	})

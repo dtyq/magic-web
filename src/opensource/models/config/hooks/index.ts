@@ -79,17 +79,22 @@ export function useClusterConfig() {
 	const [clustersConfig, setClustersConfig] = useState(configStore.cluster.clusterConfig)
 	
 	useEffect(() => {
-		return reaction(
+		const disposer = reaction(
 			() => configStore.cluster.cluster,
 			(config) => setClusterConfig(config),
+			{fireImmediately: true}
 		)
+		
+		return () => disposer()
 	}, [])
 	
 	useEffect(() => {
-		return reaction(
+		const disposer = reaction(
 			() => configStore.cluster.clusterConfig,
 			(config) => setClustersConfig(config),
 		)
+		
+		return () => disposer()
 	}, [])
 	
 	return {clusterConfig, clustersConfig}

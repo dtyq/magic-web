@@ -22,7 +22,6 @@ export const useStyles = createStyles(({ css, token }) => {
 			width: 100%;
 			height: 100%;
 			box-sizing: border-box;
-			padding: 40px;
 			overflow-y: auto;
 			overflow-x: hidden;
 			text-align: center;

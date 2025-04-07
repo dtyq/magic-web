@@ -136,7 +136,7 @@ export const enum RequestUrl {
 	/** 批量拉取指定会话下的多条消息 */
 	batchGetConversationMessagesV2 = "/api/v1/im/conversations/messages/queries",
 	/** 【新版本】查询用户任务列表 */
-	getTaskList = "/api/v1/user/task/list",
+	getTaskList = "/api/v1/user/task",
 	/** 【新版本】创建用户任务 */
 	createTask = "/api/v1/user/task",
 	/** 【新版本】获取用户任务 */
@@ -250,6 +250,10 @@ export const enum RequestUrl {
 	getTeamshareKnowledgeProgress = "/api/v2/magic/external-api/teamshare/knowledge/manageable-progress",
 	/** 发起知识库的向量创建 */
 	createTeamshareKnowledgeVector = "/api/v2/magic/external-api/teamshare/knowledge/start-vector",
+	/** Api Key 调用 Agent */
+	callAgent = "/api/chat",
+	/** Api Key 调用工具或流程  */
+	callToolOrFlow = "/api/param-call",
 
 	/** 发布流程版本 */
 	publishFlow = "/api/v1/flows/${flowId}/version/publish",
@@ -275,6 +279,12 @@ export const enum RequestUrl {
 	deleteKnowledge = "/api/v1/knowledge-bases/${code}",
 	/** 知识库匹配 */
 	matchKnowledge = "/api/v1/knowledge-bases/similarity",
+	/** 获取知识库的文档列表 */
+	getKnowledgeDocumentList = "/api/v1/knowledge-bases/${code}/documents/queries",
+	/** 添加知识库的文档 */
+	addKnowledgeDocument = "/api/v1/knowledge-bases/${code}/documents",
+	/** 删除知识库的文档 */
+	deleteKnowledgeDocument = "/api/v1/knowledge-bases/${knowledge_code}/documents/${document_code}",
 	/** 创建片段 */
 	createFragment = "/api/v1/knowledge-bases/${knowledge-base-code}/documents/${document-code}/fragments",
 	/** 更新片段 */
@@ -303,6 +313,7 @@ export const enum RequestUrl {
 	getTopicList = "/api/v1/im/conversations/${conversationId}/topics/queries",
 	/** 获取话题消息 */
 	getTopicMessages = "/api/v2/magic/topic/messages",
+	/** 话题智能重命名 */
 	getMagicTopicName = "/api/v1/im/conversations/${conversationId}/topics/${topicId}/name",
 
 	/** 获取数据表 */

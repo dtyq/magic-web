@@ -1,7 +1,6 @@
 import MagicIcon from "@/opensource/components/base/MagicIcon"
 import { RoutePath } from "@/const/routes"
 import { useKnowledgeStore } from "@/opensource/stores/knowledge"
-
 import { IconSearch } from "@tabler/icons-react"
 import { useMemoizedFn, useMount } from "ahooks"
 import { Flex } from "antd"
@@ -12,9 +11,11 @@ import { useNavigate, useParams } from "react-router"
 import type { Knowledge } from "@/types/knowledge"
 import { useTranslation } from "react-i18next"
 import { KnowledgeApi } from "@/apis"
+import { FlowRouteType } from "@/types/flow"
+import { replaceRouteParams } from "@/utils/route"
 import AddFragment from "./components/AddFragment"
 import Fragments from "./components/Fragments"
-import AddOrUpdateKnowledge from "../components/AddOrUpdateKnowledge"
+import UpdateKnowledge from "../components/UpdateKnowledge"
 import { hasEditRight } from "../../components/AuthControlButton/types"
 
 const useKnowledgeDetailStyles = createStyles(({ css, isDarkMode, token }) => {
@@ -49,7 +50,7 @@ const useKnowledgeDetailStyles = createStyles(({ css, isDarkMode, token }) => {
 				${isDarkMode ? token.magicColorScales.grey[8] : token.magicColorUsages.border};
 			height: 60px;
 
-			.icon-edit: {
+			.icon-edit {
 				padding: 4px;
 				cursor: pointer;
 				border-radius: 4px;
@@ -99,7 +100,7 @@ export default function KnowledgeDetail() {
 	const { data } = useKnowledgeStore((state) => state.useKnowledgeDetail)(id as string)
 
 	const backToKnowledge = useMemoizedFn(() => {
-		navigate(RoutePath.FlowKnowledgeList)
+		navigate(replaceRouteParams(RoutePath.Flows, { type: FlowRouteType.Knowledge }))
 	})
 
 	const [keyword, setKeyword] = useState("")
@@ -147,12 +148,13 @@ export default function KnowledgeDetail() {
 				<Flex vertical>
 					<Flex className={styles.title} align="center" gap={4}>
 						<span>{knowledge?.name}</span>
-						{hasEditRight(knowledge?.user_operation!) && (
-							<AddOrUpdateKnowledge
-								knowledge={knowledge}
-								updateKnowledge={updateKnowledge}
-							/>
-						)}
+						{knowledge?.user_operation !== undefined &&
+							hasEditRight(knowledge.user_operation) && (
+								<UpdateKnowledge
+									knowledge={knowledge}
+									updateKnowledge={updateKnowledge}
+								/>
+							)}
 					</Flex>
 				</Flex>
 				<Flex justify="space-between" gap={8} flex={1}>
@@ -166,9 +168,11 @@ export default function KnowledgeDetail() {
 						/>
 					</Flex>
 					<Flex align="center">
-						{id && hasEditRight(knowledge?.user_operation!) && (
-							<AddFragment knowledgeId={id} initFragmentList={initFragmentList} />
-						)}
+						{id &&
+							knowledge?.user_operation !== undefined &&
+							hasEditRight(knowledge.user_operation) && (
+								<AddFragment knowledgeId={id} initFragmentList={initFragmentList} />
+							)}
 					</Flex>
 				</Flex>
 			</Flex>

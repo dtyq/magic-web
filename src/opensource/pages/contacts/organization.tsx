@@ -27,13 +27,11 @@ function OrganizationPage() {
 
 	const { currentDepartmentPath } = useContactPageDataContext()
 
-	const handleItemClick = useMemoizedFn(
-		async (node: OrganizationSelectItem, toNext: () => void) => {
-			if (!isMember(node)) {
-				toNext()
-			}
-		},
-	)
+	const handleItemClick = useMemoizedFn((node: OrganizationSelectItem, toNext: () => void) => {
+		if (!isMember(node)) {
+			toNext()
+		}
+	})
 
 	const memberNodeWrapper = useMemoizedFn((node: ReactNode, member: StructureUserItem) => {
 		return (

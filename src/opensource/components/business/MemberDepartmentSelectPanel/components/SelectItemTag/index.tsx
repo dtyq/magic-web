@@ -21,47 +21,51 @@ const useStyles = createStyles(({ css, token }) => ({
 	`,
 }))
 
-const SelectItemTag = memo(
-	({ data, onClose, ...props }: TagProps & { data: OrganizationSelectItem }) => {
-		const { styles } = useStyles()
+const SelectItemTag = memo(function SelectItemTag({
+	data,
+	onClose,
+	...props
+}: TagProps & { data: OrganizationSelectItem }) {
+	const { styles } = useStyles()
 
-		return (
-			<MagicTag closable onClose={onClose} className={styles.tag} {...props}>
-				{(() => {
-					switch (true) {
-						case isMember(data):
-							return (
-								<Flex align="center" gap={10}>
-									<MagicAvatar size={20} src={data.avatar_url} />
+	return (
+		<MagicTag closable onClose={onClose} className={styles.tag} {...props}>
+			{(() => {
+				switch (true) {
+					case isMember(data):
+						return (
+							<Flex align="center" gap={10}>
+								<MagicAvatar size={20} src={data.avatar_url}>
 									{data.real_name}
-								</Flex>
-							)
-						case isDepartment(data):
-							return (
-								<Flex align="center" gap={10}>
-									<MagicIcon
-										color="currentColor"
-										component={IconSitemap}
-										size={18}
-										className={styles.departmentIcon}
-									/>
-									{data.name}
-								</Flex>
-							)
-						case isGroup(data):
-							return (
-								<Flex align="center" gap={10}>
-									<MagicAvatar size={20} src={data.group_avatar} />
-									{data.group_name}
-								</Flex>
-							)
-						default:
-							return null
-					}
-				})()}
-			</MagicTag>
-		)
-	},
-)
+								</MagicAvatar>
+								{data.real_name}
+							</Flex>
+						)
+					case isDepartment(data):
+						return (
+							<Flex align="center" gap={10}>
+								<MagicIcon
+									color="currentColor"
+									component={IconSitemap}
+									size={18}
+									className={styles.departmentIcon}
+								/>
+								{data.name}
+							</Flex>
+						)
+					case isGroup(data):
+						return (
+							<Flex align="center" gap={10}>
+								<MagicAvatar size={20} src={data.group_avatar} />
+								{data.group_name}
+							</Flex>
+						)
+					default:
+						return null
+				}
+			})()}
+		</MagicTag>
+	)
+})
 
 export default SelectItemTag

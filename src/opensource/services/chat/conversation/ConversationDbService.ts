@@ -32,7 +32,7 @@ class ConversationDbServices {
 			.getConversationTable()
 			?.where({ id: conversationId })
 			.first()
-			.then((c) => new Conversation(c))
+			.then((c) => (c ? new Conversation(c) : undefined))
 	}
 
 	/**
