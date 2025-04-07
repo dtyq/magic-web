@@ -8,7 +8,7 @@ FROM ${NODE_IMAGE} as builder
 
 WORKDIR /app
 
-COPY turbo.json package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
 COPY ./packages ./packages
 
 RUN npm install pnpm --location=global && \

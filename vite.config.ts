@@ -75,7 +75,7 @@ export default defineConfig({
 		alias: [
 			{
 				find: "@dtyq/magic-flow",
-				replacement: join(__dirname, "packages/magic-flow/dist"),
+				replacement: join(__dirname, "node_modules/@dtyq/magic-flow/dist"),
 			},
 		],
 	},
