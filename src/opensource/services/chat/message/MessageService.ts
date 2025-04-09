@@ -82,6 +82,14 @@ class MessageService {
 	}
 
 	/**
+	 * 注销
+	 */
+	destroy() {
+		this.messagePullService.unregisterMessagePullLoop()
+		this.reset()
+	}
+
+	/**
 	 * 重置数据
 	 */
 	reset() {
@@ -137,7 +145,8 @@ class MessageService {
 				const serverMessages = await this.messagePullService.pullMessagesFromServer({
 					conversationId,
 					topicId,
-					pageSize: MessageStore.pageSize,
+					// AI 搜索消息，需要多拉取一些才能保证数据完整性, 统一设置为30
+					pageSize: 30,
 					withoutSeqId: true,
 				})
 
@@ -376,7 +385,7 @@ class MessageService {
 			})
 			return
 		}
-
+		console.log('getHistoryMessages data ====> ', data?.messages?.length)
 		if (data?.messages?.length) {
 			// 获取未读的消息，发送已读回执
 			const unreadMessages = data.messages.filter((message) => message.unread_count > 0)
