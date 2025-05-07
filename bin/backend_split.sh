@@ -10,7 +10,11 @@ REPOS=$@
 function split()
 {
     SHA1=`./bin/splitsh-lite --prefix=$1`
+<<<<<<< HEAD
     git push $2 "$SHA1:refs/heads/$CURRENT_BRANCH" -f
+=======
+    # git push $2 "$SHA1:refs/heads/$CURRENT_BRANCH" -f
+>>>>>>> 1200f408 (删除 service_split.sh 脚本文件)
 }
 
 function remote()
