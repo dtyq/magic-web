@@ -43,7 +43,7 @@ class MessageCache {
 			this.removeLowestPriorityLRU()
 		}
 
-		const limitedMessages = cacheData?.messages?.slice(-this.maxMessages)
+		const limitedMessages = cacheData?.messages?.slice(0, this.maxMessages)
 
 		cacheData.messages = limitedMessages
 

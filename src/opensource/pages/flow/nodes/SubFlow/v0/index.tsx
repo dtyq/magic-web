@@ -1,20 +1,19 @@
-import DropdownCard from "@dtyq/magic-flow/common/BaseUI/DropdownCard"
+import DropdownCard from "@dtyq/magic-flow/dist/common/BaseUI/DropdownCard"
 import { useMemo, useState } from "react"
-import { useCurrentNode } from "@dtyq/magic-flow/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
-import { ShowColumns } from "@dtyq/magic-flow/MagicJsonSchemaEditor/constants"
-import JSONSchemaRenderer from "@dtyq/magic-flow/common/BaseUI/JSONSchemaRenderer"
+import { useCurrentNode } from "@dtyq/magic-flow/dist/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
+import { ShowColumns } from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/constants"
+import JSONSchemaRenderer from "@dtyq/magic-flow/dist/common/BaseUI/JSONSchemaRenderer"
 import { useFlowStore } from "@/opensource/stores/flow"
 import { Form, Select } from "antd"
 import { useMemoizedFn, useMount, useUpdateEffect } from "ahooks"
 import { get, set } from "lodash-es"
-import type Schema from "@dtyq/magic-flow/MagicJsonSchemaEditor/types/Schema"
-import MagicJsonSchemaEditor from "@dtyq/magic-flow/MagicJsonSchemaEditor"
-import { useFlow } from "@dtyq/magic-flow/MagicFlow/context/FlowContext/useFlow"
+import type Schema from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/types/Schema"
+import MagicJsonSchemaEditor from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor"
+import { useNodeConfigActions } from "@dtyq/magic-flow/dist/MagicFlow/context/FlowContext/useFlow"
 import { replaceRouteParams } from "@/utils/route"
 import { RoutePath } from "@/const/routes"
 import RenderLabelCommon from "@/opensource/pages/flow/components/RenderLabel/RenderLabel"
 import { useTranslation } from "react-i18next"
-import { customNodeType } from "@/opensource/pages/flow/constants"
 import { FlowRouteType } from "@/types/flow"
 import { FlowApi } from "@/apis"
 import usePrevious from "../../../common/hooks/usePrevious"
@@ -27,7 +26,7 @@ export default function SubFlowV0() {
 	const { currentNode } = useCurrentNode()
 	const [input, setInput] = useState<Schema>()
 
-	const { updateNodeConfig } = useFlow()
+	const { updateNodeConfig } = useNodeConfigActions()
 
 	const { subFlows } = useFlowStore()
 

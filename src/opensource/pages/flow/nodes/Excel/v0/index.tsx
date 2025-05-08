@@ -1,15 +1,14 @@
-import DropdownCard from "@dtyq/magic-flow/common/BaseUI/DropdownCard"
+import DropdownCard from "@dtyq/magic-flow/dist/common/BaseUI/DropdownCard"
 import { useMemo } from "react"
-import { useCurrentNode } from "@dtyq/magic-flow/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
+import { useCurrentNode } from "@dtyq/magic-flow/dist/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
 import { Form } from "antd"
 import { set, cloneDeep } from "lodash-es"
 import { useMemoizedFn } from "ahooks"
-import MagicJSONSchemaEditorWrap from "@dtyq/magic-flow/common/BaseUI/MagicJsonSchemaEditorWrap"
-import { ShowColumns } from "@dtyq/magic-flow/MagicJsonSchemaEditor/constants"
-import { DisabledField } from "@dtyq/magic-flow/MagicJsonSchemaEditor/types/Schema"
-import { useFlow } from "@dtyq/magic-flow/MagicFlow/context/FlowContext/useFlow"
+import MagicJSONSchemaEditorWrap from "@dtyq/magic-flow/dist/common/BaseUI/MagicJsonSchemaEditorWrap"
+import { ShowColumns } from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/constants"
+import { DisabledField } from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/types/Schema"
+import { useNodeConfigActions } from "@dtyq/magic-flow/dist/MagicFlow/context/FlowContext/useFlow"
 import usePrevious from "@/opensource/pages/flow/common/hooks/usePrevious"
-import { customNodeType } from "@/opensource/pages/flow/constants"
 import useCurrentNodeUpdate from "@/opensource/pages/flow/common/hooks/useCurrentNodeUpdate"
 import NodeOutputWrap from "@/opensource/pages/flow/components/NodeOutputWrap/NodeOutputWrap"
 import { useTranslation } from "react-i18next"
@@ -21,7 +20,7 @@ export default function ExcelV0() {
 	const [form] = Form.useForm()
 	const { currentNode } = useCurrentNode()
 
-	const { updateNodeConfig } = useFlow()
+	const { updateNodeConfig } = useNodeConfigActions()
 
 	const { expressionDataSource } = usePrevious()
 

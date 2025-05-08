@@ -2,7 +2,8 @@ import { IconChevronRight, IconUsers } from "@tabler/icons-react"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { MagicList } from "@/opensource/components/MagicList"
-import { useLocation, useNavigate } from "react-router"
+import { useLocation } from "react-router"
+import { useNavigate } from "@/opensource/hooks/useNavigate"
 import { RoutePath } from "@/const/routes"
 import MagicIcon from "@/opensource/components/base/MagicIcon"
 import SubSiderContainer from "@/opensource/layouts/BaseLayout/components/SubSider"
@@ -11,29 +12,43 @@ import { Flex } from "antd"
 import AutoTooltipText from "@/opensource/components/other/AutoTooltipText"
 import { IconMagicBots } from "@/enhance/tabler/icons-react"
 import type { MagicListItemData } from "@/opensource/components/MagicList/types"
-import { useMemoizedFn } from "ahooks"
+import { useMemoizedFn, useMount } from "ahooks"
 import { useCurrentMagicOrganization } from "@/opensource/models/user/hooks"
 import { useContactStore } from "@/opensource/stores/contact/hooks"
 import MagicSpin from "@/opensource/components/base/MagicSpin"
-import useUserInfo from "@/opensource/hooks/chat/useUserInfo"
-import { colorScales, colorUsages } from "@/opensource/providers/ThemeProvider/colors"
 import { useStyles } from "./styles"
 import { Line } from "./Line"
 import { useContactPageDataContext } from "../ContactDataProvider/hooks"
+import { observer } from "mobx-react-lite"
+import { userStore } from "@/opensource/models/user"
+import { useTheme } from "antd-style"
+import { StructureUserItem } from "@/types/organization"
+import userInfoService from "@/opensource/services/userInfo"
 
 interface CurrentOrganizationProps {
 	onItemClick: (data: MagicListItemData) => void
 }
 
-function CurrentOrganization({ onItemClick }: CurrentOrganizationProps) {
+const CurrentOrganization = observer(({ onItemClick }: CurrentOrganizationProps) => {
 	const { t } = useTranslation("interface")
 	const { styles } = useStyles()
 	const organization = useCurrentMagicOrganization()
 
-	const { userInfo: info } = useUserInfo()
-	const userId = info?.user_id
+	const [userInfo, setUserInfo] = useState<StructureUserItem | null>(null)
+	const [isLoading, setIsLoading] = useState(false)
 
-	const { userInfo, isMutating } = useUserInfo(userId, true)
+	useMount(() => {
+		if (!userStore.user.userInfo?.user_id) return
+		setIsLoading(true)
+		userInfoService
+			.fetchUserInfos([userStore.user.userInfo?.user_id], 2)
+			.then((res) => {
+				setUserInfo(res[0])
+			})
+			.finally(() => {
+				setIsLoading(false)
+			})
+	})
 
 	const departmentIds = useMemo(
 		() =>
@@ -111,7 +126,7 @@ function CurrentOrganization({ onItemClick }: CurrentOrganizationProps) {
 								name: n.name,
 							})),
 							title: (
-								<MagicSpin spinning={isMutating}>
+								<MagicSpin spinning={isLoading}>
 									<Flex gap={8} align="center" style={{ marginLeft: 40 }}>
 										{Line}
 										<span className={styles.departmentPathName}>
@@ -127,13 +142,14 @@ function CurrentOrganization({ onItemClick }: CurrentOrganizationProps) {
 			/>
 		</Flex>
 	)
-}
+})
 
 function ContactsSubSider() {
 	const { t } = useTranslation("interface")
 	const { pathname } = useLocation()
 	const { styles } = useStyles()
 	const navigate = useNavigate()
+	const { magicColorScales } = useTheme()
 
 	const [collapseKey, setCollapseKey] = useState<string>(pathname)
 
@@ -167,7 +183,7 @@ function ContactsSubSider() {
 							avatar: {
 								src: <MagicIcon color="currentColor" component={IconMagicBots} />,
 								style: {
-									background: colorUsages.primary.default,
+									background: magicColorScales.brand[5],
 									padding: 8,
 									color: "white",
 								},
@@ -205,9 +221,9 @@ function ContactsSubSider() {
 							route: RoutePath.ContactsMyGroups,
 							title: t("contacts.subSider.myGroups"),
 							avatar: {
-								icon: <MagicIcon color="currentColor" component={IconUsers} />,
+								src: <MagicIcon color="currentColor" component={IconUsers} />,
 								style: {
-									background: colorScales.lightGreen[5],
+									background: magicColorScales.lightGreen[5],
 									padding: 8,
 									color: "white",
 								},

@@ -1,6 +1,6 @@
 import { observer, useLocalObservable } from "mobx-react-lite"
-import { useRef, useCallback, useEffect, lazy, Suspense, useLayoutEffect } from "react"
-import { useMemoizedFn, useMount } from "ahooks"
+import { useRef, useCallback, useEffect, useLayoutEffect } from "react"
+import { useMemoizedFn } from "ahooks"
 import MessageStore from "@/opensource/stores/chatNew/message"
 import MessageService from "@/opensource/services/chat/message/MessageService"
 import conversationStore from "@/opensource/stores/chatNew/conversation"
@@ -14,34 +14,19 @@ import { autorun } from "mobx"
 import { cx } from "antd-style"
 import { DomClassName } from "@/const/dom"
 import { debounce, throttle } from "lodash-es"
-import type {
-	GroupAddMemberMessage,
-	GroupCreateMessage,
-	GroupUsersRemoveMessage,
-	GroupUpdateMessage,
-	GroupDisbandMessage,
-} from "@/types/chat/conversation_message"
-import { ControlEventMessageType, MessageReceiveType } from "@/types/chat"
 import { useFontSize } from "@/opensource/providers/AppearanceProvider/hooks"
 import AiConversationMessageLoading from "./components/AiConversationMessageLoading"
 import BackBottom from "./components/BackBottom"
-import RevokeTip from "./components/RevokeTip"
 import { useStyles } from "./styles"
-import GroupCreateTip from "./components/MessageFactory/components/GroupCreateTip"
-import GroupDisbandTip from "./components/MessageFactory/components/GroupDisbandTip"
-import GroupUpdateTip from "./components/MessageFactory/components/GroupUpdateTip"
-import GroupUsersRemoveTip from "./components/MessageFactory/components/GroupUsersRemoveTip"
-import InviteMemberTip from "./components/MessageFactory/components/InviteMemberTip"
-import MessageItem from "./components/MessageItem"
 import GroupSeenPanelStore, {
 	domClassName as GroupSeenPanelDomClassName,
 } from "@/opensource/stores/chatNew/groupSeenPanel"
-
-
-const GroupSeenPanel = lazy(() => import("../GroupSeenPanel"))
+import { isMessageInView } from "./utils"
+import MessageRender from "./components/MessageRender"
 
 let canScroll = true
 let isScrolling = false
+let lastScrollTop = 0
 let lastMessageId = ""
 
 const ChatMessageList = observer(() => {
@@ -53,6 +38,8 @@ const ChatMessageList = observer(() => {
 	const chatListRef = useRef<HTMLDivElement | null>(null)
 	const resizeObserverRef = useRef<ResizeObserver | null>(null)
 	const initialRenderRef = useRef(true)
+	const isContentChanging = useRef(false)
+	const checkMessagesFillViewportTimerRef = useRef<NodeJS.Timeout | null>(null)
 	const state = useLocalObservable(() => ({
 		isLoadingMore: false,
 		isAtBottom: true,
@@ -78,61 +65,61 @@ const ChatMessageList = observer(() => {
 		},
 	}))
 
-	const renderMessage = useMemoizedFn((message: any) => {
-		switch (message.type) {
-			case ControlEventMessageType.GroupAddMember:
-				return (
-					<InviteMemberTip
-						key={message.message_id}
-						content={message.message as GroupAddMemberMessage}
-					/>
-				)
-			case ControlEventMessageType.GroupCreate:
-				return (
-					<GroupCreateTip
-						key={message.message_id}
-						content={message.message as GroupCreateMessage}
-					/>
-				)
-			case ControlEventMessageType.GroupUsersRemove:
-				return (
-					<GroupUsersRemoveTip
-						key={message.message_id}
-						content={message.message as GroupUsersRemoveMessage}
-					/>
-				)
-			case ControlEventMessageType.GroupUpdate:
-				return (
-					<GroupUpdateTip
-						key={message.message_id}
-						content={message.message as GroupUpdateMessage}
-					/>
-				)
-			case ControlEventMessageType.GroupDisband:
-				return (
-					<GroupDisbandTip
-						key={message.message_id}
-						content={message.message as GroupDisbandMessage}
-					/>
-				)
-			default:
-		return message.revoked ? (
-			<RevokeTip key={message.message_id} senderUid={message.sender_id} />
-		) : (
-			<MessageItem
-				key={message.message_id}
-				message_id={message.message_id}
-				sender_id={message.sender_id}
-				name={message.name}
-				avatar={message.avatar}
-				is_self={message.is_self ?? false}
-				message={message.message}
-				unread_count={message.unread_count}
-				refer_message_id={message.refer_message_id}
-			/>
-		)
-		}
-	})
+	// const renderMessage = useMemoizedFn((message: any) => {
+	// 	switch (message.type) {
+	// 		case ControlEventMessageType.GroupAddMember:
+	// 			return (
+	// 				<InviteMemberTip
+	// 					key={message.message_id}
+	// 					content={message.message as GroupAddMemberMessage}
+	// 				/>
+	// 			)
+	// 		case ControlEventMessageType.GroupCreate:
+	// 			return (
+	// 				<GroupCreateTip
+	// 					key={message.message_id}
+	// 					content={message.message as GroupCreateMessage}
+	// 				/>
+	// 			)
+	// 		case ControlEventMessageType.GroupUsersRemove:
+	// 			return (
+	// 				<GroupUsersRemoveTip
+	// 					key={message.message_id}
+	// 					content={message.message as GroupUsersRemoveMessage}
+	// 				/>
+	// 			)
+	// 		case ControlEventMessageType.GroupUpdate:
+	// 			return (
+	// 				<GroupUpdateTip
+	// 					key={message.message_id}
+	// 					content={message.message as GroupUpdateMessage}
+	// 				/>
+	// 			)
+	// 		case ControlEventMessageType.GroupDisband:
+	// 			return (
+	// 				<GroupDisbandTip
+	// 					key={message.message_id}
+	// 					content={message.message as GroupDisbandMessage}
+	// 				/>
+	// 			)
+	// 		default:
+	// 			return message.revoked ? (
+	// 				<RevokeTip key={message.message_id} senderUid={message.sender_id} />
+	// 			) : (
+	// 				<MessageItem
+	// 					key={message.message_id}
+	// 					message_id={message.message_id}
+	// 					sender_id={message.sender_id}
+	// 					name={message.name}
+	// 					avatar={message.avatar}
+	// 					is_self={message.is_self ?? false}
+	// 					message={message.message}
+	// 					unread_count={message.unread_count}
+	// 					refer_message_id={message.refer_message_id}
+	// 				/>
+	// 			)
+	// 	}
+	// })
 
 	const scrollToMessage = useMemoizedFn(
 		(
@@ -177,9 +164,8 @@ const ChatMessageList = observer(() => {
 
 	// 加载更多历史消息
 	const loadMoreHistoryMessages = useMemoizedFn(async () => {
-		console.log('loadMoreHistoryMessages', state.isLoadingMore, MessageStore.hasMoreHistoryMessage)
 		if (state.isLoadingMore || !MessageStore.hasMoreHistoryMessage) return
-		
+
 		try {
 			state.setIsLoadingMore(true)
 			canScroll = false
@@ -203,14 +189,63 @@ const ChatMessageList = observer(() => {
 	// 检查滚动位置并处理
 	const checkScrollPosition = useMemoizedFn(() => {
 		if (!wrapperRef.current || !initialRenderRef.current || isScrolling) return
-		
+		// 初始化状态不处理
+		if (lastScrollTop === 0) {
+			lastScrollTop = wrapperRef.current.scrollTop
+			return
+		}
+
 		const { scrollTop, clientHeight, scrollHeight } = wrapperRef.current
 		const distance = Math.abs(scrollTop + clientHeight - scrollHeight)
 
-		state.setIsAtBottom(distance < 50)
-		// 提前加载
-		if (scrollTop < 150 && !state.isLoadingMore) {
-			loadMoreHistoryMessages()
+		state.setIsAtBottom(distance < 100)
+		canScroll = distance < 100
+
+		const isScrollUp = lastScrollTop - scrollTop > 0
+		lastScrollTop = scrollTop
+		if (isScrollUp && !state.isLoadingMore) {
+			// 加载更多，判断第四条消息是否进入视图
+			const messageId = MessageStore.messages[3]?.message_id
+
+			if (isMessageInView(messageId, wrapperRef.current) || scrollTop < 150) {
+				loadMoreHistoryMessages()
+			}
+		}
+	})
+
+	// 检查是否需要加载更多消息来填充视图
+	const checkMessagesFillViewport = useMemoizedFn(async () => {
+		if (
+			!wrapperRef.current ||
+			!chatListRef.current ||
+			state.isLoadingMore ||
+			!MessageStore.hasMoreHistoryMessage
+		) {
+			return
+		}
+
+		const wrapperHeight = wrapperRef.current.clientHeight
+		const listHeight = chatListRef.current.clientHeight
+
+		// 如果内容高度小于容器高度，并且我们有足够的消息可以加载
+		// 加载更多历史消息直到填满视图或没有更多消息
+		if (listHeight < wrapperHeight && MessageStore.messages.length > 0) {
+			console.log("容器未填满，尝试加载更多历史消息", listHeight, wrapperHeight)
+
+			try {
+				await loadMoreHistoryMessages()
+
+				// 递归检查，直到填满或没有更多消息
+				if (checkMessagesFillViewportTimerRef.current) {
+					clearTimeout(checkMessagesFillViewportTimerRef.current)
+				}
+
+				checkMessagesFillViewportTimerRef.current = setTimeout(() => {
+					checkMessagesFillViewport()
+				}, 300)
+			} catch (error) {
+				console.error("加载更多消息失败", error)
+			}
 		}
 	})
 
@@ -223,9 +258,9 @@ const ChatMessageList = observer(() => {
 
 		// 如果最后一条消息为空，证明是初始化状态，滚动到底部
 		if (!lastMessageId) {
-			console.log('handleResize to bottom')
 			lastMessageId = messages[messages.length - 1]?.message_id
 			scrollToBottom(true)
+
 			return
 		}
 
@@ -236,7 +271,7 @@ const ChatMessageList = observer(() => {
 			(lastMessage.is_self && lastMessage?.message_id !== lastMessageId) ||
 			state.isAtBottom
 		) {
-			console.log('handleResize send bottom')
+			console.log("handleResize send bottom")
 			lastMessageId = lastMessage?.message_id
 			scrollToBottom(true)
 			return
@@ -252,11 +287,28 @@ const ChatMessageList = observer(() => {
 				behavior: "smooth",
 			})
 		}
+
+		// 数据变更，并且滚动条停留在顶部，加载多一页
+		if (
+			wrapperRef.current &&
+			wrapperRef.current.scrollTop === 0 &&
+			!MessageStore.hasMoreHistoryMessage
+		) {
+			loadMoreHistoryMessages()
+			requestAnimationFrame(() => {
+				if (wrapperRef.current) {
+					wrapperRef.current.scrollTop = 200
+				}
+			})
+		}
 	})
 
 	const handleContainerScroll = throttle(() => {
+		// 列表大小变化时，不处理
+		if (isContentChanging.current) return
+
 		checkScrollPosition()
-	}, 30)
+	}, 50)
 
 	// 切换会话或者话题
 	useEffect(() => {
@@ -264,15 +316,25 @@ const ChatMessageList = observer(() => {
 			wrapperRef.current.removeEventListener("scroll", handleContainerScroll)
 		}
 
+		state.reset()
+		lastMessageId = ""
+		canScroll = true
+		lastScrollTop = 0
 		initialRenderRef.current = false
 		scrollToBottom(true)
 
 		setTimeout(() => {
-			initialRenderRef.current = true
 			if (wrapperRef.current) {
 				wrapperRef.current.addEventListener("scroll", handleContainerScroll)
 			}
-		}, 300)
+			initialRenderRef.current = true
+
+			// 会话切换后，检查消息是否填满视图
+			if (checkMessagesFillViewportTimerRef.current) {
+				clearTimeout(checkMessagesFillViewportTimerRef.current)
+			}
+			checkMessagesFillViewport()
+		}, 1000)
 	}, [MessageStore.conversationId, MessageStore.topicId])
 
 	useLayoutEffect(() => {
@@ -281,7 +343,13 @@ const ChatMessageList = observer(() => {
 			debounce((entries) => {
 				const chatList = entries[0]
 				if (!chatList) return
+				// 列表大小变化
+				isContentChanging.current = true
 				handleResize()
+				// 重置
+				setTimeout(() => {
+					isContentChanging.current = false
+				}, 0)
 			}, 100),
 		)
 
@@ -297,16 +365,6 @@ const ChatMessageList = observer(() => {
 			}
 		})
 
-		// 切换会话，重置状态
-		const conversationDisposer = autorun(() => {
-			if (conversationStore.currentConversation) {
-				state.reset()
-				lastMessageId = ""
-				canScroll = true
-				initialRenderRef.current = false
-			}
-		})
-
 		function handleClick(e: MouseEvent) {
 			const target = e.target as HTMLElement
 			if (target.classList.contains("message-item-menu")) {
@@ -319,13 +377,15 @@ const ChatMessageList = observer(() => {
 
 		return () => {
 			focusDisposer()
-			conversationDisposer()
 			document.removeEventListener("click", handleClick)
 			state.reset()
 			resizeObserverRef.current?.disconnect()
 			resizeObserverRef.current = null
 			if (wrapperRef.current) {
 				wrapperRef.current.removeEventListener("scroll", handleContainerScroll)
+			}
+			if (checkMessagesFillViewportTimerRef.current) {
+				clearTimeout(checkMessagesFillViewportTimerRef.current)
 			}
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -339,13 +399,20 @@ const ChatMessageList = observer(() => {
 
 		// 如果是图片点击，并且不是表情
 		if (target.tagName === "IMG" && target.classList.contains("magic-image")) {
-			// 如果是同一张图片，先重置状态
-			MessageFilePreview.setPreviewInfo({
-				messageId: messageId ?? "",
-				conversationId: conversationStore.currentConversation?.id ?? "",
-				url: target.getAttribute("src") ?? "",
-				fileName: target.getAttribute("alt") ?? "",
-			})
+			const fileInfo = target.getAttribute("data-file-info")
+			if (fileInfo) {
+				try {
+					const fileInfoObj = JSON.parse(atob(fileInfo))
+					// 如果是同一张图片，先重置状态
+					MessageFilePreview.setPreviewInfo({
+						...fileInfoObj,
+						messageId,
+						conversationId: conversationStore.currentConversation?.id,
+					})
+				} catch (error) {
+					console.error("解析文件信息失败", error)
+				}
+			}
 		}
 
 		if (messageElement && messageElement.classList.contains(GroupSeenPanelDomClassName)) {
@@ -364,7 +431,7 @@ const ChatMessageList = observer(() => {
 			// 从点击元素开始向上查找，直到找到带有 data-message-id 的元素
 			const messageElement = target.closest("[data-message-id]")
 			const messageId = messageElement?.getAttribute("data-message-id")
-			MessageDropdownService.setMenu(messageId ?? "")
+			MessageDropdownService.setMenu(messageId ?? "", e.target)
 			state.setDropdownPosition({ x: e.clientX, y: e.clientY })
 			state.setOpenDropdown(true)
 		}
@@ -391,14 +458,14 @@ const ChatMessageList = observer(() => {
 					}}
 				>
 					{MessageStore.messages.map((message) => {
-						const item = renderMessage(message)
+						// const item = renderMessage(message)
 						return (
 							<div
 								id={message.message_id}
 								key={message.message_id}
 								style={{ willChange: "transform" }}
 							>
-								{item}
+								<MessageRender message={message} />
 							</div>
 						)
 					})}
@@ -445,15 +512,7 @@ const ChatMessageList = observer(() => {
 					<div style={{ display: "none" }} />
 				</MagicDropdown>
 			</div>
-			<BackBottom
-				visible={!state.isAtBottom}
-				onScrollToBottom={() => scrollToBottom(true)}
-			/>
-			{conversationStore.currentConversation?.receive_type === MessageReceiveType.Group && (
-				<Suspense fallback={null}>
-					<GroupSeenPanel />
-				</Suspense>
-			)}
+			<BackBottom visible={!state.isAtBottom} onScrollToBottom={() => scrollToBottom(true)} />
 		</div>
 	)
 })

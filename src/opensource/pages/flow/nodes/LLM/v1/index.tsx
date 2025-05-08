@@ -1,14 +1,14 @@
 import { Form } from "antd"
 import { useForm } from "antd/lib/form/Form"
-import DropdownCard from "@dtyq/magic-flow/common/BaseUI/DropdownCard"
+import DropdownCard from "@dtyq/magic-flow/dist/common/BaseUI/DropdownCard"
 
 import { useMemoizedFn } from "ahooks"
-import { useFlow } from "@dtyq/magic-flow/MagicFlow/context/FlowContext/useFlow"
-import { useCurrentNode } from "@dtyq/magic-flow/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
+import { useNodeConfigActions } from "@dtyq/magic-flow/dist/MagicFlow/context/FlowContext/useFlow"
+import { useCurrentNode } from "@dtyq/magic-flow/dist/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
 import { set } from "lodash-es"
-import MagicJSONSchemaEditorWrap from "@dtyq/magic-flow/common/BaseUI/MagicJsonSchemaEditorWrap"
-import { ShowColumns } from "@dtyq/magic-flow/MagicJsonSchemaEditor/constants"
-import { DisabledField } from "@dtyq/magic-flow/MagicJsonSchemaEditor/types/Schema"
+import MagicJSONSchemaEditorWrap from "@dtyq/magic-flow/dist/common/BaseUI/MagicJsonSchemaEditorWrap"
+import { ShowColumns } from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/constants"
+import { DisabledField } from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/types/Schema"
 import usePrevious from "@/opensource/pages/flow/common/hooks/usePrevious"
 import useCurrentNodeUpdate from "@/opensource/pages/flow/common/hooks/useCurrentNodeUpdate"
 import NodeOutputWrap from "@/opensource/pages/flow/components/NodeOutputWrap/NodeOutputWrap"
@@ -25,11 +25,12 @@ import LLMParameters from "./components/LLMParameters"
 import useParameterHandler from "./hooks/useParameterHandler"
 import KnowledgeDataListV1 from "./components/KnowledgeDataList/KnowledgeDataList"
 import { getLLMRoleConstantOptions } from "./helpers"
+import { isOnlyKnowledgeTypeChange } from "./utils/knowledgeTypeHelper"
 
 export default function LLMV1() {
 	const { t } = useTranslation()
 	const [form] = useForm()
-	const { nodeConfig, updateNodeConfig } = useFlow()
+	const { updateNodeConfig } = useNodeConfigActions()
 
 	const { currentNode } = useCurrentNode()
 
@@ -42,24 +43,35 @@ export default function LLMV1() {
 	const { handleModelConfigChange } = useParameterHandler()
 
 	const onValuesChange = useMemoizedFn((changeValues) => {
-		if (!currentNode || !nodeConfig || !nodeConfig[currentNode?.node_id]) return
-		const currentNodeConfig = nodeConfig[currentNode?.node_id]
+		console.log("🚀 ~ onValuesChange ~ changeValues:", changeValues)
+
+		console.log("form", form.getFieldsValue(true))
 
 		if (changeValues.model_config) {
 			handleModelConfigChange(changeValues)
 		} else if (changeValues.option_tools) {
 			handleToolsChanged(changeValues)
 		} else if (changeValues.knowledge_config) {
-			// eslint-disable-next-line @typescript-eslint/no-use-before-define
+			// 检查是否仅变更了knowledge_type
+			const [isOnlyTypeChange, typeChangeIndex] = isOnlyKnowledgeTypeChange(changeValues)
+			if (isOnlyTypeChange && typeChangeIndex !== undefined) {
+				// 只有knowledge_type变化，重置对应的knowledge_code
+				// 延迟执行以避免与当前更新冲突
+				form.setFieldValue(
+					["knowledge_config", "knowledge_list", typeChangeIndex, "knowledge_code"],
+					"",
+				)
+			}
+			// 继续执行原有的知识库变更处理
 			knowledgeValueChangeHandler()
 		} else {
 			Object.entries(changeValues).forEach(([changeKey, changeValue]) => {
-				set(currentNodeConfig, ["params", changeKey], changeValue)
+				set(currentNode, ["params", changeKey], changeValue)
 			})
 		}
 
 		updateNodeConfig({
-			...currentNodeConfig,
+			...currentNode,
 		})
 	})
 

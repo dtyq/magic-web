@@ -17,6 +17,9 @@ import type {
 	TextConversationMessage,
 	ConversationMessageSend,
 	ConversationMessage,
+	ImageConversationMessage,
+	VideoConversationMessage,
+	HDImageMessage,
 } from "@/types/chat/conversation_message"
 import { EventType } from "@/types/chat"
 import { action, makeObservable, toJS } from "mobx"
@@ -37,10 +40,14 @@ import MessageSeqIdService from "./MessageSeqIdService"
 import MessageCacheService from "./MessageCacheService"
 import ConversationBotDataService from "../conversation/ConversationBotDataService"
 import ConversationService from "../conversation/ConversationService"
-import { getSlicedText } from "../conversation/utils"
+import { getRevokedText, getSlicedText } from "../conversation/utils"
 import DotsService from "../dots/DotsService"
 import { userStore } from "@/opensource/models/user"
-
+import { UpdateSpec } from "dexie"
+import MessageFileService from "./MessageFileService"
+import { getStringSizeInBytes } from "@/opensource/utils/size"
+import { JSONContent } from "@tiptap/core"
+import ChatFileService from "../file/ChatFileService"
 const console = new Logger("MessageService", "blue")
 
 type SendData =
@@ -105,6 +112,7 @@ class MessageService {
 	 * @param topicId 话题ID
 	 */
 	public async initMessages(conversationId: string, topicId: string = "") {
+		console.log("initMessages ====> ", conversationId, topicId)
 		if (MessageStore.conversationId === conversationId && MessageStore.topicId === topicId) {
 			return
 		}
@@ -145,8 +153,7 @@ class MessageService {
 				const serverMessages = await this.messagePullService.pullMessagesFromServer({
 					conversationId,
 					topicId,
-					// 需要多拉取一些才能保证数据完整性(如AI搜索消息), 统一设置为30
-					pageSize: 30,
+					pageSize: MessageStore.pageSize,
 					withoutSeqId: true,
 				})
 
@@ -171,6 +178,7 @@ class MessageService {
 
 		// 当前一定是第一页
 		MessageStore.setPageConfig(1, data.totalPages ?? 1)
+		this.checkMessageAttachmentExpired(data.messages)
 		MessageStore.setMessages(conversationId, topicId, data.messages ?? [])
 
 		// 获取未读的消息，发送已读回执
@@ -319,8 +327,7 @@ class MessageService {
 		const messages = await this.messagePullService.pullMessagesFromServer({
 			conversationId,
 			topicId,
-			// 需要多拉取一些才能保证数据完整性(如AI搜索消息), 统一设置为30
-			pageSize: 30,
+			pageSize: MessageStore.pageSize,
 			loadHistory,
 		})
 
@@ -386,18 +393,94 @@ class MessageService {
 			})
 			return
 		}
-		console.log('getHistoryMessages data ====> ', data?.messages?.length)
 		if (data?.messages?.length) {
 			// 获取未读的消息，发送已读回执
 			const unreadMessages = data.messages.filter((message) => message.unread_count > 0)
 			if (unreadMessages.length) {
 				this.sendReadReceipt(unreadMessages)
 			}
-
+			this.checkMessageAttachmentExpired(data.messages)
 			MessageStore.addMessages(data.messages)
 			MessageStore.setPageConfig(MessageStore.page + 1, data.totalPages ?? 1)
 		} else {
 			MessageStore.setHasMoreHistoryMessage(false)
+		}
+	}
+
+	/**
+	 * 检查消息附件是否过期
+	 */
+	checkMessageAttachmentExpired(messages: FullMessage[]) {
+		const expiredFiles = messages.reduce((prev, cur) => {
+			switch (cur.type) {
+				case ConversationMessageType.Files:
+					;(cur.message as FileConversationMessage).files?.attachments.forEach((file) => {
+						if (ChatFileService.checkFileExpired(file.file_id)) {
+							prev.push({ message_id: cur.message_id, file_id: file.file_id })
+						}
+					})
+					break
+				case ConversationMessageType.RichText:
+					;(cur.message as RichTextConversationMessage).rich_text?.attachments?.forEach(
+						(file) => {
+							if (ChatFileService.checkFileExpired(file.file_id)) {
+								prev.push({ message_id: cur.message_id, file_id: file.file_id })
+							}
+						},
+					)
+					break
+				case ConversationMessageType.Text:
+					;(cur.message as TextConversationMessage).text?.attachments?.forEach((file) => {
+						if (ChatFileService.checkFileExpired(file.file_id)) {
+							prev.push({ message_id: cur.message_id, file_id: file.file_id })
+						}
+					})
+					break
+				case ConversationMessageType.Markdown:
+					;(cur.message as MarkdownConversationMessage).markdown?.attachments?.forEach(
+						(file) => {
+							if (ChatFileService.checkFileExpired(file.file_id)) {
+								prev.push({ message_id: cur.message_id, file_id: file.file_id })
+							}
+						},
+					)
+					break
+				case ConversationMessageType.Image:
+					const fileId = (cur.message as ImageConversationMessage).image?.file_id
+					if (fileId && ChatFileService.checkFileExpired(fileId)) {
+						prev.push({ message_id: cur.message_id, file_id: fileId })
+					}
+					break
+				case ConversationMessageType.Video:
+					const videoId = (cur.message as VideoConversationMessage).video?.file_id
+					if (videoId && ChatFileService.checkFileExpired(videoId)) {
+						prev.push({ message_id: cur.message_id, file_id: videoId })
+					}
+					break
+				case ConversationMessageType.AiImage:
+					;(cur.message as AIImagesMessage).ai_image_card?.items?.forEach((item) => {
+						if (ChatFileService.checkFileExpired(item.file_id)) {
+							prev.push({ message_id: cur.message_id, file_id: item.file_id })
+						}
+					})
+					break
+				case ConversationMessageType.HDImage:
+					const hdImageId = (cur.message as HDImageMessage).image_convert_high_card
+						?.new_file_id
+					if (hdImageId && ChatFileService.checkFileExpired(hdImageId)) {
+						prev.push({ message_id: cur.message_id, file_id: hdImageId })
+					}
+					break
+				default:
+					break
+			}
+
+			return prev
+		}, [] as { message_id: string; file_id: string }[])
+
+		// 获取过期文件的url
+		if (expiredFiles.length) {
+			ChatFileService.fetchFileUrl(expiredFiles)
 		}
 	}
 
@@ -545,6 +628,87 @@ class MessageService {
 	 */
 	sendRecordMessage(conversationId: string, referMessageId: string, messageBase: SendData) {
 		this.formatAndSendMessage(conversationId, messageBase, referMessageId)
+	}
+
+	/**
+	 * 提取文本
+	 * @param jsonValue 富文本
+	 * @returns 文本
+	 */
+	extractText(jsonValue: JSONContent) {
+		if (!jsonValue) {
+			return ""
+		}
+		const text: string[] = []
+
+		const formatContent = (content: JSONContent) => {
+			content.forEach((item: JSONContent) => {
+				if (item.type === "text") {
+					text.push(item.text ?? "")
+				}
+
+				if (item.type === "image") {
+					try {
+						text.push(JSON.stringify(item.attrs))
+					} catch (error) {
+						text.push(JSON.stringify(item))
+					}
+				}
+
+				if (Array.isArray(item.content)) {
+					formatContent(item.content)
+				}
+			})
+		}
+
+		if (jsonValue.content) {
+			formatContent(jsonValue.content)
+		}
+
+		return text.join(`\n`)
+	}
+
+	/**
+	 * 判断文本是否超过限制大小
+	 * @param text 文本
+	 * @param limitKB 限制大小，默认20KB
+	 * @returns 是否超过限制
+	 */
+	isTextSizeOverLimit(text: string, limitKB = 20) {
+		return getStringSizeInBytes(text) > limitKB
+	}
+
+	public async sendLongMessage(
+		conversationId: string,
+		data: MessageData,
+		referMessageId?: string,
+	) {
+		const { normalValue, onlyTextContent, jsonValue, files } = data
+
+		let text = ""
+
+		// 纯文本直接走流程
+		if (onlyTextContent) {
+			text = normalValue ?? ""
+		} else {
+			text = this.extractText(jsonValue)
+		}
+
+		const reportRes = await MessageFileService.uploadFileByText(text)
+
+		return this.sendMessage(
+			conversationId,
+			{
+				normalValue: "",
+				onlyTextContent: true,
+				jsonValue: {
+					type: "doc",
+					content: [{ type: "paragraph", attrs: { suggestion: "" } }],
+				},
+				files: [...(reportRes as any[]), ...files],
+			},
+			referMessageId,
+		)
 	}
 
 	/**
@@ -770,11 +934,6 @@ class MessageService {
 				),
 			)
 
-			if (conversationId === "752530204698857473") {
-				console.log("getMessagesByPage userInfo ======> ", userInfo)
-				console.log("getMessagesByPage messages ======> ", messages)
-			}
-
 			return { messages, page: res.page, pageSize: res.pageSize, totalPages: res.totalPages }
 		} catch (error) {
 			console.error("数据库访问错误，无法获取消息", error)
@@ -842,6 +1001,10 @@ class MessageService {
 			MessageStore.topicId === message.message.topic_id
 		) {
 			const fullMessage = this.formatMessage(message, userStore.user.userInfo)
+
+			// 检查消息附件是否过期
+			this.checkMessageAttachmentExpired([fullMessage])
+
 			MessageStore.addReceivedMessage(fullMessage)
 			if (!fullMessage.is_self) this.sendReadReceipt([fullMessage])
 		} else {
@@ -875,6 +1038,15 @@ class MessageService {
 					...message,
 					revoked: true,
 				}
+			})
+		}
+
+		// 如果最后一条消息是撤回的消息, 则更新内容
+		const conversation = conversationStore.getConversation(conversationId)
+		if (conversation && conversation.last_receive_message?.seq_id === messageId) {
+			ConversationService.updateLastReceiveMessage(conversationId, {
+				...conversation.last_receive_message,
+				...getRevokedText(),
 			})
 		}
 
@@ -969,8 +1141,7 @@ class MessageService {
 				ConversationService.updateLastReceiveMessage(conversationId, {
 					time: lastMessage.message.send_time,
 					seq_id: lastMessage.message_id,
-					type: lastMessage.message.type,
-					text: getSlicedText(lastMessage.message),
+					...getSlicedText(lastMessage.message, lastMessage.revoked),
 					topic_id: lastMessage.message.topic_id ?? "",
 				})
 			} else {
@@ -1018,8 +1189,7 @@ class MessageService {
 			ConversationService.updateLastReceiveMessage(conversationId, {
 				time: updatedMessage.message.send_time,
 				seq_id: updatedMessage.message_id,
-				type: updatedMessage.message.type,
-				text: getSlicedText(updatedMessage.message),
+				...getSlicedText(updatedMessage.message, updatedMessage.revoked),
 				topic_id: updatedMessage.message.topic_id ?? "",
 			})
 		}
@@ -1137,7 +1307,7 @@ class MessageService {
 	updateDbMessage(
 		localMessageId: string,
 		conversation_id: string,
-		changes: Partial<SeqResponse<ConversationMessage>>,
+		changes: UpdateSpec<SeqResponse<ConversationMessage>>,
 	) {
 		this.messageDbService.updateMessage(localMessageId, conversation_id, changes)
 	}
@@ -1149,6 +1319,26 @@ class MessageService {
 	 */
 	updateMessageId(tempId: string, messsageId: string) {
 		MessageStore.updateMessageId(tempId, messsageId)
+	}
+
+	/**
+	 * 删除话题消息
+	 * @param conversationId 会话ID
+	 * @param deleteTopicId 话题ID
+	 */
+	removeTopicMessages(conversationId: string, deleteTopicId: string) {
+		if (
+			MessageStore.conversationId === conversationId &&
+			MessageStore.topicId === deleteTopicId
+		) {
+			MessageStore.reset()
+		} else if (MessageCacheService.hasCache(conversationId, deleteTopicId)) {
+			// 删除缓存中的消息
+			MessageCacheService.removeTopicMessages(conversationId, deleteTopicId)
+		}
+
+		// 删除数据库中的消息
+		this.messageDbService.removeTopicMessages(conversationId, deleteTopicId)
 	}
 }
 

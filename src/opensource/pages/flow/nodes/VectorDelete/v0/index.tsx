@@ -2,18 +2,17 @@ import { Form } from "antd"
 import { useForm } from "antd/lib/form/Form"
 import { useMemo } from "react"
 import { useMemoizedFn } from "ahooks"
-import { useFlow } from "@dtyq/magic-flow/MagicFlow/context/FlowContext/useFlow"
-import { useCurrentNode } from "@dtyq/magic-flow/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
+import { useNodeConfigActions } from "@dtyq/magic-flow/dist/MagicFlow/context/FlowContext/useFlow"
+import { useCurrentNode } from "@dtyq/magic-flow/dist/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
 import { set, cloneDeep } from "lodash-es"
-import MagicExpressionWrap from "@dtyq/magic-flow/common/BaseUI/MagicExpressionWrap"
-import { ExpressionMode } from "@dtyq/magic-flow/MagicExpressionWidget/constant"
-import { ShowColumns } from "@dtyq/magic-flow/MagicJsonSchemaEditor/constants"
-import { FormItemType } from "@dtyq/magic-flow/MagicExpressionWidget/types"
-import MagicJSONSchemaEditorWrap from "@dtyq/magic-flow/common/BaseUI/MagicJsonSchemaEditorWrap"
+import MagicExpressionWrap from "@dtyq/magic-flow/dist/common/BaseUI/MagicExpressionWrap"
+import { ExpressionMode } from "@dtyq/magic-flow/dist/MagicExpressionWidget/constant"
+import { ShowColumns } from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/constants"
+import { FormItemType } from "@dtyq/magic-flow/dist/MagicExpressionWidget/types"
+import MagicJSONSchemaEditorWrap from "@dtyq/magic-flow/dist/common/BaseUI/MagicJsonSchemaEditorWrap"
 import { useTranslation } from "react-i18next"
 import styles from "./index.module.less"
 import usePrevious from "../../../common/hooks/usePrevious"
-import { customNodeType } from "../../../constants"
 import KnowledgeSelect from "../../VectorSearch/v0/components/KnowledgeSelect/KnowledgeSelect"
 import useOldKnowledgeHandle from "../../VectorSearch/v0/components/KnowledgeSelect/hooks/useOldKnowledgeHandle"
 import useCurrentNodeUpdate from "../../../common/hooks/useCurrentNodeUpdate"
@@ -22,7 +21,7 @@ import { v0Template } from "./template"
 export default function VectorDeleteV0() {
 	const { t } = useTranslation()
 	const [form] = useForm()
-	const { updateNodeConfig } = useFlow()
+	const { updateNodeConfig } = useNodeConfigActions()
 
 	const { currentNode } = useCurrentNode()
 

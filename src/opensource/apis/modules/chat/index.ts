@@ -7,19 +7,18 @@ import type {
 	OpenConversationMessage,
 } from "@/types/chat/conversation"
 import type {
-	RevokeMessage,
 	ConversationMessageSend,
-	GroupCreateMessage,
 	ChatFileUrlData,
 	ConversationMessage,
 } from "@/types/chat/conversation_message"
+import type { RevokeMessage, GroupCreateMessage } from "@/types/chat/control_message"
 import {
 	type CMessage,
 	type MessageReceiveType,
 	EventType,
 	ControlEventMessageType,
 } from "@/types/chat"
-import type { PaginationResponse, SeqResponse } from "@/types/request"
+import type { LoginResponse, PaginationResponse, SeqResponse } from "@/types/request"
 import { encodeSocketIoMessage } from "@/utils/socketio"
 import { genAppMessageId, genRequestId } from "@/utils/random"
 import type { DeleteTopicMessage, ConversationTopic, CreateTopicMessage } from "@/types/chat/topic"
@@ -36,8 +35,34 @@ import type { Bot } from "@/types/bot"
 import type { TaskListParams, UserTask, CreateTaskParams, ListData } from "@/types/chat/task"
 import type { HttpClient } from "../../core/HttpClient"
 import type { ChatWebSocket } from "../../clients/chatWebSocket"
-
+import { fetchPaddingData } from "@/utils/request"
 export const generateChatApi = (fetch: HttpClient, socket: ChatWebSocket) => ({
+	/**
+	 * 登录
+	 * @param authorization 授权
+	 * @returns
+	 */
+	login(authorization: string) {
+		return socket.apiSend<LoginResponse>(
+			encodeSocketIoMessage(
+				EventType.Login,
+				{
+					message: {
+						type: "text",
+						text: {
+							content: "登录",
+						},
+						app_message_id: genAppMessageId(),
+					},
+					conversation_id: "",
+				},
+				0,
+				{
+					authorization,
+				},
+			),
+		)
+	},
 	/**
 	 * 发送消息
 	 * @param chatMessage 消息内容
@@ -562,6 +587,24 @@ export const generateChatApi = (fetch: HttpClient, socket: ChatWebSocket) => ({
 		return fetch.post<Record<string, SeqRecord<ConversationMessage>[]>>(
 			genRequestUrl(RequestUrl.batchGetConversationMessagesV2),
 			arg0,
+		)
+	},
+
+	/**
+	 * 根据应用消息ID获取消息
+	 * @param appMessageId 应用消息ID
+	 * @returns
+	 */
+	getMessagesByAppMessageId(appMessageId: string) {
+		return fetchPaddingData(
+			(params) => {
+				return fetch.post<PaginationResponse<SeqRecord<ConversationMessage>>>(
+					genRequestUrl(RequestUrl.getMessagesByAppMessageId, { appMessageId }),
+					params,
+				)
+			},
+			[],
+			"",
 		)
 	},
 

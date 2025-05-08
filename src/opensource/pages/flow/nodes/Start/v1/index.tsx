@@ -12,20 +12,24 @@ import { useMemoizedFn } from "ahooks"
 import { cx } from "antd-style"
 import { nanoid } from "nanoid"
 import { get, find, findIndex, set, cloneDeep } from "lodash-es"
-import { useFlow } from "@dtyq/magic-flow/MagicFlow/context/FlowContext/useFlow"
-import { useCurrentNode } from "@dtyq/magic-flow/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
-import TsInput from "@dtyq/magic-flow/common/BaseUI/Input"
+import {
+	useFlow,
+	useFlowData,
+	useNodeConfigActions,
+} from "@dtyq/magic-flow/dist/MagicFlow/context/FlowContext/useFlow"
+import { useCurrentNode } from "@dtyq/magic-flow/dist/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
+import TsInput from "@dtyq/magic-flow/dist/common/BaseUI/Input"
 import { useTranslation } from "react-i18next"
 
-import TsSelect from "@dtyq/magic-flow/common/BaseUI/Select"
+import TsSelect from "@dtyq/magic-flow/dist/common/BaseUI/Select"
 import { useMemo } from "react"
-import { ShowColumns } from "@dtyq/magic-flow/MagicJsonSchemaEditor/constants"
-import MagicJsonSchemaEditor from "@dtyq/magic-flow/MagicJsonSchemaEditor"
-import { FormItemType } from "@dtyq/magic-flow/MagicExpressionWidget/types"
+import { ShowColumns } from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/constants"
+import MagicJsonSchemaEditor from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor"
+import { FormItemType } from "@dtyq/magic-flow/dist/MagicExpressionWidget/types"
 import { FlowType } from "@/types/flow"
-import DropdownCard from "@dtyq/magic-flow/common/BaseUI/DropdownCard"
-import JSONSchemaRenderer from "@dtyq/magic-flow/common/BaseUI/JSONSchemaRenderer"
-import CustomHandle from "@dtyq/magic-flow/MagicFlow/nodes/common/Handle/Source"
+import DropdownCard from "@dtyq/magic-flow/dist/common/BaseUI/DropdownCard"
+import JSONSchemaRenderer from "@dtyq/magic-flow/dist/common/BaseUI/JSONSchemaRenderer"
+import CustomHandle from "@dtyq/magic-flow/dist/MagicFlow/nodes/common/Handle/Source"
 import styles from "./index.module.less"
 import type { WidgetValue } from "../../../common/Output"
 import "./index.less"
@@ -41,7 +45,8 @@ const Splitor = "$$"
 export default function StartV1() {
 	const { t } = useTranslation()
 	const [form] = Form.useForm()
-	const { nodeConfig, flow, updateNodeConfig } = useFlow()
+	const { updateNodeConfig } = useNodeConfigActions()
+	const { flow } = useFlowData()
 
 	const { currentNode } = useCurrentNode()
 
@@ -90,7 +95,7 @@ export default function StartV1() {
 	const onChange = useMemoizedFn(
 		// { '1.unit': "minutes" }
 		(changeValues) => {
-			if (!currentNode || !nodeConfig || !nodeConfig[currentNode.node_id]) return
+			if (!currentNode) return
 			const triggerTypeToConfig = {} as Record<string, any>
 			Object.keys(changeValues).forEach((changeValueKey) => {
 				const innerValue = Reflect.get(changeValues, changeValueKey)
@@ -110,7 +115,7 @@ export default function StartV1() {
 			 * }
 			 */
 
-			const node = nodeConfig[currentNode.node_id]
+			const node = currentNode
 
 			// eslint-disable-next-line no-restricted-syntax, prefer-const
 			for (let [triggerType, newConfig] of Object.entries(triggerTypeToConfig)) {

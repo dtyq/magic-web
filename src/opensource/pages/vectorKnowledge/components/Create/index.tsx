@@ -1,31 +1,26 @@
 import { useState, useMemo, useEffect } from "react"
-import { Form, Input, Button, Upload, message, Flex, Modal, Spin } from "antd"
-import {
-	IconPhotoPlus,
-	IconFileUpload,
-	IconTrash,
-	IconCircleCheck,
-	IconChevronLeft,
-} from "@tabler/icons-react"
+import { Form, Input, Button, message, Flex, Modal, Spin } from "antd"
+import { IconFileUpload, IconTrash, IconCircleCheck, IconChevronLeft } from "@tabler/icons-react"
 import { LoadingOutlined } from "@ant-design/icons"
 import { useMemoizedFn } from "ahooks"
 import { cx } from "antd-style"
-import defaultKnowledgeAvatar from "@/assets/logos/knowledge-avatar.png"
+import DEFAULT_KNOWLEDGE_ICON from "@/assets/logos/knowledge-avatar.png"
 import { useTranslation } from "react-i18next"
 import { useUpload } from "@/opensource/hooks/useUploadFiles"
-import { genFileData } from "@/opensource/pages/chatNew/components/MessageEditor/MagicInput/components/InputFiles/utils"
-import { useNavigate } from "react-router-dom"
+import { genFileData } from "@/opensource/pages/chatNew/components/MessageEditor/components/InputFiles/utils"
+import { useNavigate } from "@/opensource/hooks/useNavigate"
 import { replaceRouteParams } from "@/utils/route"
 import { RoutePath } from "@/const/routes"
 import { FlowRouteType } from "@/types/flow"
 import MagicIcon from "@/opensource/components/base/MagicIcon"
 import { useVectorKnowledgeCreateStyles } from "./styles"
-import { fileTypeIconsMap, DEFAULT_ICON_OSS_KEY } from "../../constant"
+import { getFileTypeIcon } from "../../constant"
 import VectorKnowledgeEmbed from "../Embed"
 import { KnowledgeApi } from "@/apis"
-import type { Knowledge } from "@/types/knowledge"
 import DocumentUpload from "../Upload/DocumentUpload"
 import ImageUpload from "../Upload/ImageUpload"
+import VectorKnowledgeConfiguration from "../Configuration"
+import type { TemporaryKnowledgeConfig } from "../../types"
 
 type DataType = {
 	name: string
@@ -42,13 +37,6 @@ type UploadFileItem = {
 	path?: string
 }
 
-export type CreatedKnowledge = {
-	code: string
-	name: string
-	icon: string
-	fileList?: Knowledge.EmbedDocumentDetail[]
-}
-
 export default function VectorKnowledgeCreate() {
 	const { styles } = useVectorKnowledgeCreateStyles()
 
@@ -59,9 +47,9 @@ export default function VectorKnowledgeCreate() {
 	const [form] = Form.useForm<DataType>()
 
 	// 预览图标URL
-	const [previewIconUrl, setPreviewIconUrl] = useState(defaultKnowledgeAvatar)
+	const [previewIconUrl, setPreviewIconUrl] = useState(DEFAULT_KNOWLEDGE_ICON)
 	// 上传图标URL
-	const [uploadIconUrl, setUploadIconUrl] = useState(DEFAULT_ICON_OSS_KEY)
+	const [uploadIconUrl, setUploadIconUrl] = useState("")
 	// 上传文件列表
 	const [fileList, setFileList] = useState<UploadFileItem[]>([])
 
@@ -71,8 +59,15 @@ export default function VectorKnowledgeCreate() {
 
 	// 是否允许提交
 	const [allowSubmit, setAllowSubmit] = useState(false)
-	// 创建成功的知识库
-	const [createdKnowledge, setCreatedKnowledge] = useState<CreatedKnowledge>()
+	// 临时缓存的知识库配置
+	const [temporaryConfig, setTemporaryConfig] = useState<TemporaryKnowledgeConfig>()
+	// 创建成功的知识库编码
+	const [createdKnowledgeCode, setCreatedKnowledgeCode] = useState("")
+
+	// 是否处于待配置状态
+	const [isPendingConfiguration, setIsPendingConfiguration] = useState(false)
+	// 是否处于待嵌入状态
+	const [isPendingEmbed, setIsPendingEmbed] = useState(false)
 
 	/** 初始化表单值 */
 	const initialValues = useMemo(() => {
@@ -163,7 +158,7 @@ export default function VectorKnowledgeCreate() {
 	const handleBack = useMemoizedFn(() => {
 		navigate(
 			replaceRouteParams(RoutePath.Flows, {
-				type: FlowRouteType.Knowledge,
+				type: FlowRouteType.VectorKnowledge,
 			}),
 		)
 	})
@@ -172,52 +167,73 @@ export default function VectorKnowledgeCreate() {
 	const handleSubmit = async () => {
 		try {
 			const values = await form.validateFields()
-			Modal.confirm({
-				title: t("knowledgeDatabase.createVectorKnowledgeTip"),
-				okText: t("common.confirm"),
-				cancelText: t("common.cancel"),
-				onOk: async () => {
-					// 调用接口创建知识库
-					const data = await KnowledgeApi.createKnowledge({
-						name: values.name,
-						icon: uploadIconUrl,
-						description: values.description,
-						enabled: true,
-						document_files: fileList
-							.filter((item) => !!item.path)
-							.map((item) => ({
-								name: item.name,
-								key: item.path!,
-							})),
-					})
-					if (data) {
-						// 清空表单
-						form.resetFields()
-						setUploadIconUrl("")
-						setFileList([])
-						// 设置创建状态
-						setCreatedKnowledge({
-							code: data.code,
-							name: data.name,
-							icon: data.icon,
-						})
-					}
-				},
+			setTemporaryConfig({
+				name: values.name,
+				icon: uploadIconUrl,
+				description: values.description,
+				enabled: true,
+				document_files: fileList
+					.filter((item) => !!item.path)
+					.map((item) => ({
+						name: item.name,
+						key: item.path!,
+					})),
 			})
+			setIsPendingConfiguration(true)
 		} catch (error) {
 			console.error("表单验证失败:", error)
 		}
 	}
 
 	/** 必填项检验 */
+	const nameValue = Form.useWatch("name", form)
+
+	/** 配置页返回 */
+	const handleConfigurationBack = useMemoizedFn(() => {
+		setIsPendingConfiguration(false)
+	})
+
+	/** 配置页提交 */
+	const handleConfigurationSubmit = useMemoizedFn(async (data: TemporaryKnowledgeConfig) => {
+		try {
+			// 调用接口创建知识库
+			const res = await KnowledgeApi.createKnowledge(data)
+			if (res) {
+				// 清空表单
+				form.resetFields()
+				setUploadIconUrl("")
+				setFileList([])
+				setIsPendingConfiguration(false)
+				setIsPendingEmbed(true)
+				setCreatedKnowledgeCode(res.code)
+				message.success(t("common.savedSuccess"))
+			}
+		} catch (error) {
+			console.error("创建知识库失败:", error)
+			message.error(t("knowledgeDatabase.saveConfigFailed"))
+		}
+	})
+
+	// 判断是否允许提交
 	useEffect(() => {
-		setAllowSubmit(!!form.getFieldValue("name") && !!uploadIconUrl && fileList.length > 0)
-	}, [form, uploadIconUrl, fileList])
+		setAllowSubmit(!!nameValue && fileList.length > 0)
+	}, [nameValue, fileList])
 
 	const PageContent = useMemo(() => {
-		if (createdKnowledge) {
-			return <VectorKnowledgeEmbed createdKnowledge={createdKnowledge} />
+		if (temporaryConfig && isPendingConfiguration) {
+			return (
+				<VectorKnowledgeConfiguration
+					knowledgeBase={temporaryConfig}
+					onBack={handleConfigurationBack}
+					onSubmit={handleConfigurationSubmit}
+				/>
+			)
 		}
+
+		if (createdKnowledgeCode && isPendingEmbed) {
+			return <VectorKnowledgeEmbed knowledgeBaseCode={createdKnowledgeCode} />
+		}
+
 		return (
 			<Flex vertical justify="space-between" className={styles.container}>
 				<div className={styles.content}>
@@ -232,9 +248,7 @@ export default function VectorKnowledgeCreate() {
 					>
 						<Form.Item
 							label={
-								<div className={cx(styles.label, styles.required)}>
-									{t("knowledgeDatabase.icon")}
-								</div>
+								<div className={styles.label}>{t("knowledgeDatabase.icon")}</div>
 							}
 							rules={[
 								{
@@ -282,7 +296,11 @@ export default function VectorKnowledgeCreate() {
 						</Form.Item>
 
 						<Form.Item
-							label={<div className={styles.label}>{t("common.uploadFile")}</div>}
+							label={
+								<div className={cx(styles.label, styles.required)}>
+									{t("common.uploadFile")}
+								</div>
+							}
 						>
 							<div>
 								<DocumentUpload handleFileUpload={handleFileUpload}>
@@ -295,7 +313,7 @@ export default function VectorKnowledgeCreate() {
 									<div className={styles.uploadDescription}>
 										{`${t(
 											"common.supported",
-										)} TXT、MARKDOWN、PDF、HTML、XLSX、XLS、DOCX、CSV、XML、HTM`}
+										)} TXT、MARKDOWN、PDF、XLSX、XLS、DOCX、CSV、XML`}
 										<br />
 										{t("common.fileSizeLimit", { size: "15MB" })}
 									</div>
@@ -308,7 +326,7 @@ export default function VectorKnowledgeCreate() {
 										className={styles.fileItem}
 									>
 										<Flex align="center" gap={8}>
-											{fileTypeIconsMap[file.name.split(".").pop()!]}
+											{getFileTypeIcon(file.name.split(".").pop()!)}
 											<div>{file.name}</div>
 										</Flex>
 										<Flex align="center" gap={8}>
@@ -343,7 +361,8 @@ export default function VectorKnowledgeCreate() {
 		uploadIconUrl,
 		fileList,
 		form,
-		createdKnowledge,
+		temporaryConfig,
+		isPendingEmbed,
 		handleFileRemove,
 		handleSubmit,
 	])

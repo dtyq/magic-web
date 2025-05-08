@@ -3,7 +3,7 @@ import type { GroupInfo } from "@/types/organization"
 import { fetchPaddingData } from "@/utils/request"
 import type { IndexableType, Table } from "dexie"
 import { makeAutoObservable, observable } from "mobx"
-import type { GroupUpdateMessage } from "@/types/chat/conversation_message"
+import type { GroupUpdateMessage } from "@/types/chat/control_message"
 import groupInfoStore from "@/opensource/stores/groupInfo"
 import userInfoService from "../userInfo"
 import { DataContextDb } from "@/opensource/database/data-context/types"
@@ -54,6 +54,9 @@ class GroupInfoSerivce {
 		).then((data) => {
 			data.forEach((item) => {
 				this.set(item.id, item)
+				if (groupInfoStore.currentGroupId === item.id) {
+					groupInfoStore.setCurrentGroup(item)
+				}
 			})
 			return data
 		})
@@ -67,6 +70,7 @@ class GroupInfoSerivce {
 				...params,
 			}),
 		).then((data) => {
+			groupInfoStore.setCurrentGroupMembers(data)
 			const userIds = data.map((item) => item.user_id)
 			return userInfoService.fetchUserInfos(userIds, 2)
 		})
@@ -74,7 +78,6 @@ class GroupInfoSerivce {
 
 	set(key: string, value: GroupInfo) {
 		groupInfoStore.set(key, value)
-		console.log("set ====> ", key, value)
 		this.database?.table(GroupInfoSerivce.STORE_NAME).put(value)
 	}
 
@@ -92,6 +95,10 @@ class GroupInfoSerivce {
 			groupInfo.group_avatar = group_update.group_avatar
 		}
 		this.set(group_id, groupInfo)
+
+		if (groupInfoStore.currentGroupId === group_id) {
+			groupInfoStore.setCurrentGroup(groupInfo)
+		}
 	}
 }
 

@@ -1,17 +1,17 @@
 import { Form, Tooltip } from "antd"
 import { useForm } from "antd/lib/form/Form"
 import { useMemoizedFn } from "ahooks"
-import { useFlow } from "@dtyq/magic-flow/MagicFlow/context/FlowContext/useFlow"
-import { useCurrentNode } from "@dtyq/magic-flow/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
+import { useNodeConfigActions } from "@dtyq/magic-flow/dist/MagicFlow/context/FlowContext/useFlow"
+import { useCurrentNode } from "@dtyq/magic-flow/dist/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
 import { set } from "lodash-es"
-import MagicJsonSchemaEditor from "@dtyq/magic-flow/MagicJsonSchemaEditor"
-import { ShowColumns } from "@dtyq/magic-flow/MagicJsonSchemaEditor/constants"
-import DropdownCard from "@dtyq/magic-flow/common/BaseUI/DropdownCard"
-import { DisabledField } from "@dtyq/magic-flow/MagicJsonSchemaEditor/types/Schema"
+import MagicJsonSchemaEditor from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor"
+import { ShowColumns } from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/constants"
+import DropdownCard from "@dtyq/magic-flow/dist/common/BaseUI/DropdownCard"
+import { DisabledField } from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/types/Schema"
 import { IconInfoCircle, IconPlus, IconTrash } from "@tabler/icons-react"
-import MagicExpressionWrap from "@dtyq/magic-flow/common/BaseUI/MagicExpressionWrap"
-import { ExpressionMode } from "@dtyq/magic-flow/MagicExpressionWidget/constant"
-import CustomHandle from "@dtyq/magic-flow/MagicFlow/nodes/common/Handle/Source"
+import MagicExpressionWrap from "@dtyq/magic-flow/dist/common/BaseUI/MagicExpressionWrap"
+import { ExpressionMode } from "@dtyq/magic-flow/dist/MagicExpressionWidget/constant"
+import CustomHandle from "@dtyq/magic-flow/dist/MagicFlow/nodes/common/Handle/Source"
 import { useTranslation } from "react-i18next"
 import { getExpressionPlaceholder } from "@/opensource/pages/flow/utils/helpers"
 import styles from "./index.module.less"
@@ -26,7 +26,7 @@ import useCurrentNodeUpdate from "../../../common/hooks/useCurrentNodeUpdate"
 export default function IntentionRecognitionV0() {
 	const { t } = useTranslation()
 	const [form] = useForm()
-	const { nodeConfig, updateNodeConfig } = useFlow()
+	const { updateNodeConfig } = useNodeConfigActions()
 
 	const { currentNode } = useCurrentNode()
 
@@ -35,21 +35,20 @@ export default function IntentionRecognitionV0() {
 	const { LLMOptions, LLMValue, onLLMValueChange, initialValues } = useLLM({ form })
 
 	const onValuesChange = useMemoizedFn((changeValues, allValues) => {
-		if (!currentNode || !nodeConfig || !nodeConfig[currentNode?.node_id]) return
-		const currentNodeConfig = nodeConfig[currentNode?.node_id]
+		if (!currentNode) return
 
 		Object.entries(changeValues).forEach(([changeKey, changeValue]) => {
 			// 特殊处理llm字段
 			if (changeKey === "llm") {
 				const { model, ...rest } = changeValue as any
-				set(currentNodeConfig, ["params", "model"], model)
+				set(currentNode, ["params", "model"], model)
 				if (rest && Object.keys(rest).length)
-					set(currentNodeConfig, ["params", "model_config"], rest)
+					set(currentNode, ["params", "model_config"], rest)
 				return
 			}
 			if (changeKey === "input") {
 				set(
-					currentNodeConfig,
+					currentNode,
 					["input", "form", "structure"],
 					(changeValue as WidgetValue["value"])?.form?.structure,
 				)
@@ -57,14 +56,14 @@ export default function IntentionRecognitionV0() {
 			}
 			if (changeKey === "branches") {
 				// 合并更新后的 branches
-				set(currentNodeConfig, ["params", "branches"], allValues?.branches)
+				set(currentNode, ["params", "branches"], allValues?.branches)
 				return
 			}
-			set(currentNodeConfig, ["params", changeKey], changeValue)
+			set(currentNode, ["params", changeKey], changeValue)
 		})
 
 		updateNodeConfig({
-			...currentNodeConfig,
+			...currentNode,
 		})
 	})
 

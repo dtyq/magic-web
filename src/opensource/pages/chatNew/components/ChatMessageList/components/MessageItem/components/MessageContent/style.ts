@@ -32,10 +32,15 @@ export const useStyles = createStyles(({ css, isDarkMode, token }) => ({
 		justify-content: flex-end;
 		padding-right: unset;
 		padding-left: 50px;
-		width: 100%;
+		width: fit-content;
+		max-width: calc(100% - 46px);
 		box-sizing: border-box;
 		user-select: none;
 		line-height: normal;
+		padding: 10px;
+		border-radius: 12px;
+		user-select: text;
+		overflow-x: auto;
 	`,
 	referContent: css`
 		color: ${token.colorTextQuaternary};
@@ -50,23 +55,27 @@ export const useStyles = createStyles(({ css, isDarkMode, token }) => ({
 		user-select: none;
 		align-items: flex-end;
 	`,
-	contentInnerWrapper: css`
-		width: fit-content;
-		padding: 10px;
-		border-radius: 12px;
-		user-select: text;
+	selfMessage: css`
+		margin-left: 50px;
+		flex-direction: row-reverse;
+		width: 100%;
 	`,
-
-	defaultTheme: css`
-		background: ${token.magicColorUsages.bg[1]};
-		color: ${token.magicColorUsages.text[1]};
-		${isDarkMode ? "" : `border: 1px solid ${token.colorBorder};`}
+	otherMessage: css`
 		margin-right: 50px;
+		width: 100%;
 	`,
-	magicTheme: css`
+	selfMessageStyle: css`
 		color: ${token.magicColorUsages.text[1]};
 		background: ${isDarkMode ? token.magicColorUsages.primaryLight.default : "#E6F0FF"};
 		// background: linear-gradient(99deg, #4768d4 0%, #6c8eff 0.01%, #ca58ff 100%);
-		margin-left: 50px;
+	`,
+	otherMessageStyle: css`
+		background: ${token.magicColorUsages.bg[1]};
+		color: ${token.magicColorUsages.text[1]};
+		${isDarkMode ? "" : `border: 1px solid ${token.colorBorder};`}
+	`,
+	contentWrapper: css`
+		overflow-x: hidden;
+		width: 100%;
 	`,
 }))

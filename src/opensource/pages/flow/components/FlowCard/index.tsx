@@ -1,6 +1,6 @@
 import { Flex, Switch } from "antd"
 import { useMemoizedFn } from "ahooks"
-import type { MagicFlow } from "@dtyq/magic-flow/MagicFlow/types/flow"
+import type { MagicFlow } from "@dtyq/magic-flow/dist/MagicFlow/types/flow"
 import { memo, useMemo } from "react"
 import PromptCard from "@/opensource/pages/explore/components/PromptCard"
 import { IconCircleCheckFilled, IconAlertCircleFilled, IconTools } from "@tabler/icons-react"
@@ -14,7 +14,7 @@ import { formatToK } from "@/utils/number"
 import FlowTag from "../FlowTag"
 import useStyles from "./style"
 import OperateMenu from "../OperateMenu"
-import { hasEditRight } from "../AuthControlButton/types"
+import { hasEditRight, hasViewRight } from "../AuthControlButton/types"
 import type { Knowledge } from "@/types/knowledge"
 
 type Flow = MagicFlow.Flow & {
@@ -120,7 +120,7 @@ function Card({
 		>
 			<PromptCard type={flowType} data={cardData} lineCount={lineCount} height={9} />
 			<Flex justify="space-between" align="center">
-				{flowType !== FlowRouteType.Knowledge && (
+				{flowType !== FlowRouteType.VectorKnowledge && (
 					<Flex gap={4} align="center">
 						{tagRender.map((item) => {
 							return (
@@ -143,7 +143,7 @@ function Card({
 			</Flex>
 			<Flex justify="space-between" align="center">
 				<div>{`${t("agent.createTo")} ${data.created_at?.replace(/-/g, "/")}`}</div>
-				{flowType === FlowRouteType.Knowledge && (
+				{flowType === FlowRouteType.VectorKnowledge && (
 					<Flex gap={5} align="center">
 						<div>
 							{tFlow("common.documentCount", {
@@ -159,7 +159,7 @@ function Card({
 					</Flex>
 				)}
 			</Flex>
-			{hasEditRight(data.user_operation) && (
+			{hasViewRight(data.user_operation) && (
 				<div className={styles.moreOperations}>
 					<OperateMenu menuItems={dropdownItems} useIcon />
 				</div>

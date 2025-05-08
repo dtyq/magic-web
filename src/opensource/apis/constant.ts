@@ -22,17 +22,6 @@ export const enum RequestUrl {
 	Login = "/v4/user/login",
 	/** 第三方登录 */
 	thirdPartyLogins = "/v4/user/fast_login",
-	/** 公众号登录相关 */
-	/** 获取公众号登录二维码 Ticket */
-	getWechatQrcodeTicket = "/v4/user/wechat/qrcode",
-	/** 获取公众号登录二维码图片 */
-	getWechatQrcodeImage = "/cgi-bin/showqrcode",
-	/** 获取公众号登录二维码扫码状态 */
-	getWechatLoginStatus = "/v4/user/wechat/login/status",
-	/** 发送手机验证码 */
-	sendSmsCode = "/v4/user/send_sms",
-	/** 公众号绑定手机号 */
-	wechatBindAccount = "/v4/user/bind_account",
 
 	/** 获取天书 用户信息 */
 	getTeamshareUserInfo = "/v4/users/info",
@@ -127,6 +116,8 @@ export const enum RequestUrl {
 	updateAiConversationQuickInstructionConfig = "/api/v1/im/conversations/${conversationId}/instructs",
 	/** 获取指定会话下的消息 */
 	getConversationMessages = "/api/v1/im/conversations/${conversationId}/messages/queries",
+	/** 根据应用消息ID获取消息 */
+	getMessagesByAppMessageId = "/api/v1/messages/app-message-ids/${appMessageId}/queries",
 
 	/**
 	 * 批量拉取指定会话下的消息
@@ -246,6 +237,10 @@ export const enum RequestUrl {
 	getUseableTeamshareDatabaseList = "/api/v2/magic/external-api/teamshare/knowledge/manageable",
 	/** 获取视觉理解模型数据源 */
 	getVisionModels = "/org/admin/service-providers/category",
+	/** 根据类型获取所有激活模型 */
+	getActiveModelByCategory = "/api/v1/admin/service-providers/by-category",
+	/** 获取官方重排模型列表 */
+	getRerankModels = "/api/v1/knowledge-base/providers/rerank/list",
 	/** 获取知识库向量化进度 */
 	getTeamshareKnowledgeProgress = "/api/v2/magic/external-api/teamshare/knowledge/manageable-progress",
 	/** 发起知识库的向量创建 */
@@ -254,6 +249,8 @@ export const enum RequestUrl {
 	callAgent = "/api/chat",
 	/** Api Key 调用工具或流程  */
 	callToolOrFlow = "/api/param-call",
+	/** 获取节点模板 */
+	getNodeTemplate = "/api/v1/flows/node-template",
 
 	/** 发布流程版本 */
 	publishFlow = "/api/v1/flows/${flowId}/version/publish",
@@ -283,8 +280,14 @@ export const enum RequestUrl {
 	getKnowledgeDocumentList = "/api/v1/knowledge-bases/${code}/documents/queries",
 	/** 添加知识库的文档 */
 	addKnowledgeDocument = "/api/v1/knowledge-bases/${code}/documents",
+	/** 更新知识库的文档 */
+	updateKnowledgeDocument = "/api/v1/knowledge-bases/${knowledge_code}/documents/${document_code}",
 	/** 删除知识库的文档 */
 	deleteKnowledgeDocument = "/api/v1/knowledge-bases/${knowledge_code}/documents/${document_code}",
+	/** 分段预览 */
+	segmentPreview = "/api/v1/knowledge-bases/fragments/preview",
+	/** 召回测试 */
+	recallTest = "/api/v1/knowledge-bases/${knowledge_code}/fragments/similarity",
 	/** 创建片段 */
 	createFragment = "/api/v1/knowledge-bases/${knowledge-base-code}/documents/${document-code}/fragments",
 	/** 更新片段 */
@@ -338,6 +341,8 @@ export const enum RequestUrl {
 	tempTokenToUserToken = "/api/v1/auth/teamshare-token?temp_token=${tempToken}",
 	/** 根据当前账号获取环境 code */
 	getDeploymentCode = "/api/v1/auth/environment",
+	/** 获取管理后台权限 */
+	getAdminPermission = "/api/v1/magic/operation-permissions/organization-admin",
 
 	/** bots */
 	/** 获取市场机器人 */

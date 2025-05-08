@@ -66,7 +66,7 @@ class ChatTopicService {
 			topicStore.setTopicList(cachedTopics)
 
 			if (conversation.isAiConversation && !conversation.current_topic_id) {
-				conversationService.switchTopic(conversation.id, cachedTopics[0].id)
+				conversationService.switchTopic(conversation.id, cachedTopics[0]?.id)
 			}
 		} else {
 			// 从数据库加载话题列表
@@ -89,7 +89,13 @@ class ChatTopicService {
 				})
 		}
 
-		this.fetchTopicList()
+		await this.fetchTopicList()
+
+		// 如果没有话题，创建一个话题
+		console.log("topicStore.topicList ====> ", topicStore.topicList)
+		if (!topicStore.topicList.length) {
+			await this.createTopic()
+		}
 	}
 
 	/**
@@ -457,22 +463,30 @@ class ChatTopicService {
 			return
 		}
 
-		let deleteId = ""
-		try {
-			await ChatApi.deleteTopic(conversationId, deleteTopicId)
-			deleteId = deleteTopicId
-		} catch (error: any) {
-			if (error?.code === 3011) {
-				// 会话不存在
-				deleteId = deleteTopicId
-			}
-		}
+		const promise = ChatApi.deleteTopic(conversationId, deleteTopicId)
+
+		const deleteId = deleteTopicId
 
 		if (!deleteId) return
 
+		// 如果最后一条消息是当前话题，则清空最后一条消息
+		if (conversationStore.currentConversation?.last_receive_message?.topic_id === deleteId) {
+			conversationService.clearLastReceiveMessage(conversationId)
+		}
+
 		// 获取删除前的索引位置和话题列表副本
 		const index = topicStore.topicList.findIndex((i) => i.id === deleteTopicId)
-		const topicsList = [...topicStore.topicList]
+		const nextTopicId = topicStore.topicList[(index + 1) % topicStore.topicList.length]?.id
+
+		if (conversationStore.currentConversation?.current_topic_id === deleteTopicId) {
+			// 有下一个话题，则切换到下一个话题
+			if (nextTopicId && nextTopicId !== deleteTopicId) {
+				conversationService.switchTopic(conversationId, nextTopicId)
+			} else {
+				// 没有下一个话题，则清空当前话题ID
+				conversationService.clearCurrentTopic(conversationId)
+			}
+		}
 
 		// 从 UI 状态中删除
 		topicStore.removeTopic(deleteTopicId)
@@ -480,22 +494,13 @@ class ChatTopicService {
 		// 更新数据库
 		TopicDBServices.deleteTopic(deleteTopicId, conversationId)
 
-		// 如果删除的是当前话题，需要切换话题
-		if (
-			conversationStore.currentConversation?.last_receive_message?.topic_id === deleteTopicId
-		) {
-			if (topicsList.length > 1) {
-				const target = topicsList[(index + topicsList.length - 1) % topicsList.length]
-				if (target) {
-					conversationService.switchTopic(conversationId, target.id)
-				}
-			} else {
-				conversationService.switchTopic(conversationId, undefined)
-			}
-		}
+		// 删除话题消息
+		MessageService.removeTopicMessages(conversationId, deleteTopicId)
 
 		// 删除话题后，重新获取话题列表
-		this.fetchTopicList()
+		promise.finally(() => {
+			this.fetchTopicList()
+		})
 	}
 }
 

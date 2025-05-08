@@ -1,79 +1,94 @@
 import type { AvatarProps, BadgeProps } from "antd"
 import { Avatar, Badge } from "antd"
-import { forwardRef, memo, useCallback, useMemo, useState, ReactNode } from "react"
-import { useStyles } from "./style"
-import { isValidUrl } from "./utils"
+import { forwardRef, ReactNode, useEffect, useMemo, useState } from "react"
+import AvatarService from "@/opensource/services/chat/avatar"
+import { createStyles } from "antd-style"
+import { useMemoizedFn } from "ahooks"
 
 export interface MagicAvatarProps extends AvatarProps {
 	badgeProps?: BadgeProps
 }
 
-const MagicAvatar = memo(
-	forwardRef<HTMLSpanElement, MagicAvatarProps>(
-		({ children, src, size = 40, style, badgeProps, className, ...props }, ref) => {
-			const isUrl = useMemo(() => {
-				return typeof src === "string" ? isValidUrl(src) : true
-			}, [src])
+const useStyles = createStyles(({ token }) => ({
+	avatar: {
+		backgroundColor: token.magicColorScales.white,
+	},
+}))
 
-			const [innerSrc, setInnerSrc] = useState(isUrl ? src : undefined)
+const getTextAvatar = (text: string | ReactNode, backgroundColor?: string, color?: string) => {
+	const textString = typeof text === "string" ? text : "未知"
+	return AvatarService.drawTextAvatar(textString, backgroundColor, color) ?? ""
+}
 
-			const handleError = useCallback(() => {
-				setInnerSrc(undefined)
-				return true
-			}, [])
-			
-			const isStringChildren = useMemo(() => 
-				typeof children === "string"
-			, [children])
-			
-			const displayChildren = useMemo(() => {
-				if (isStringChildren && children) {
-					return (children as string).slice(0, 2)
-				}
-				return children
-			}, [children, isStringChildren])
-			
-			const mergedStyle = useMemo(() => ({ 
-				flex: "none", 
-				...style 
-			}), [style])
+const MagicAvatar = forwardRef<HTMLSpanElement, MagicAvatarProps>(
+	({ children, src, size = 40, style, badgeProps, className, ...props }, ref) => {
+		const { styles } = useStyles()
 
-			const { styles, cx } = useStyles({
-				url: typeof src === "string" && isUrl ? src : "",
-				content: isStringChildren ? (children as string) || "" : "",
-			})
-			
-			const avatarClassNames = useMemo(() => 
-				cx(styles.avatar, className)
-			, [styles.avatar, className, cx])
-			
-			const avatarContent = (
-				<Avatar
-					ref={ref}
-					style={mergedStyle}
-					size={size}
-					shape="square"
-					draggable={false}
-					className={avatarClassNames}
-					src={innerSrc}
-					onError={handleError}
-					{...props}
-				>
-					{displayChildren}
-				</Avatar>
+		const [innerSrc, setInnerSrc] = useState<string>(
+			src && typeof src === "string"
+				? src
+				: getTextAvatar(children, style?.backgroundColor, style?.color),
+		)
+
+		useEffect(() => {
+			setInnerSrc(
+				typeof src === "string" && src
+					? src
+					: getTextAvatar(
+							typeof children === "string" ? children : "未知",
+							style?.backgroundColor,
+							style?.color,
+					  ),
 			)
-			
-			if (!badgeProps) {
-				return avatarContent
-			}
-			
+		}, [src, children, style?.backgroundColor, style?.color])
+
+		const mergedStyle = useMemo(
+			() => ({
+				flex: "none",
+				...style,
+			}),
+			[style],
+		)
+
+		const handleError = useMemoizedFn(() => {
+			setInnerSrc(getTextAvatar(children, style?.backgroundColor, style?.color))
+		})
+
+		const srcNode = useMemo(() => {
 			return (
-				<Badge offset={[-size, 0]} {...badgeProps}>
-					{avatarContent}
-				</Badge>
+				<img
+					draggable={false}
+					src={innerSrc}
+					className={styles.avatar}
+					alt={typeof children === "string" ? children : "avatar"}
+					onError={handleError}
+				/>
 			)
-		},
-	),
+		}, [children, handleError, innerSrc, styles.avatar])
+
+		const avatarContent = (
+			<Avatar
+				ref={ref}
+				style={mergedStyle}
+				size={size}
+				shape="square"
+				draggable={false}
+				className={className}
+				src={src && typeof src === "object" ? src : srcNode}
+				{...props}
+			/>
+		)
+
+		if (!badgeProps) {
+			return avatarContent
+		}
+
+		return (
+			<Badge offset={[-size, 0]} {...badgeProps}>
+				{avatarContent}
+			</Badge>
+		)
+	},
 )
 
 export default MagicAvatar

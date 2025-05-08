@@ -1,6 +1,5 @@
-/* eslint-disable class-methods-use-this */
 import type { CMessage } from "@/types/chat"
-import { ControlEventMessageType } from "@/types/chat"
+import { ControlEventMessageType, MessageReceiveType } from "@/types/chat"
 import type { SeqResponse } from "@/types/request"
 
 // 导入新的服务
@@ -10,8 +9,10 @@ import userInfoService from "@/opensource/services/userInfo"
 
 // 导入存储状态管理
 import conversationStore from "@/opensource/stores/chatNew/conversation"
+import groupInfoStore from "@/opensource/stores/groupInfo"
+import type { ConversationMessage } from "@/types/chat/conversation_message"
 import type {
-	ConversationMessage,
+	AddFriendSuccessMessage,
 	GroupAddMemberMessage,
 	GroupCreateMessage,
 	GroupDisbandMessage,
@@ -20,11 +21,10 @@ import type {
 	MuteConversationMessage,
 	RevokeMessage,
 	TopConversationMessage,
-} from "@/types/chat/conversation_message"
+} from "@/types/chat/control_message"
 import type { SeenMessage } from "@/types/chat/seen_message"
 import type { CreateTopicMessage, UpdateTopicMessage, DeleteTopicMessage } from "@/types/chat/topic"
 import { ConversationStatus } from "@/types/chat/conversation"
-import { MessageReceiveType } from "@/types/chat"
 import groupInfoService from "@/opensource/services/groupInfo"
 import MessageService from "../MessageService"
 import { userStore } from "@/opensource/models/user"
@@ -66,7 +66,8 @@ class ControlMessageApplyService {
 			ControlEventMessageType.GroupUpdate,
 			ControlEventMessageType.GroupUsersRemove,
 			ControlEventMessageType.GroupDisband,
-			ControlEventMessageType.RevokeMessage,
+			ControlEventMessageType.AddFriendSuccess,
+			ControlEventMessageType.EditMessage,
 		].includes(message.message.type as ControlEventMessageType)
 	}
 
@@ -92,6 +93,7 @@ class ControlMessageApplyService {
 	 */
 	apply(message: SeqResponse<CMessage>, options: ApplyMessageOptions = {}) {
 		const { isHistoryMessage = false } = options
+		console.log("message type", message.message.type)
 
 		switch (message.message.type) {
 			case ControlEventMessageType.OpenConversation:
@@ -142,6 +144,30 @@ class ControlMessageApplyService {
 				break
 			case ControlEventMessageType.RevokeMessage:
 				this.applyRevokeMessage(message as SeqResponse<RevokeMessage>)
+				break
+			case ControlEventMessageType.AddFriendSuccess:
+				this.applyAddFriendSuccessMessage(message as SeqResponse<AddFriendSuccessMessage>)
+				break
+			default:
+				break
+		}
+	}
+
+	/**
+	 * 应用添加好友成功消息
+	 * @param message 添加好友成功消息对象
+	 */
+	applyAddFriendSuccessMessage(message: SeqResponse<AddFriendSuccessMessage>) {
+		const {
+			add_friend_success: { receive_id, receive_type },
+		} = message.message
+		switch (receive_type) {
+			case MessageReceiveType.Ai:
+			case MessageReceiveType.User:
+				userInfoService.fetchUserInfos([receive_id], 2)
+				break
+			case MessageReceiveType.Group:
+				groupInfoService.fetchGroupInfos([receive_id])
 				break
 			default:
 				break
@@ -196,6 +222,15 @@ class ControlMessageApplyService {
 		// 先获取用户信息，避免用户信息未加载
 		await userInfoService.fetchUserInfos(message.message.group_users_remove.user_ids ?? [], 2)
 		MessageService.addReceivedMessage(message)
+
+		// 如果当前会话是群组，移除群组成员
+		const currentConversation = conversationStore.currentConversation
+		if (
+			currentConversation?.receive_type === MessageReceiveType.Group &&
+			currentConversation?.receive_id === message.message.group_users_remove.group_id
+		) {
+			groupInfoStore.removeGroupMembers(message.message.group_users_remove.user_ids ?? [])
+		}
 	}
 
 	/**
@@ -250,6 +285,8 @@ class ControlMessageApplyService {
 				// 如果是单聊，尝试获取用户信息
 				if (items[0].receive_type === MessageReceiveType.User) {
 					userInfoService.fetchUserInfos([items[0].receive_id], 2)
+				} else if (items[0].receive_type === MessageReceiveType.Group) {
+					groupInfoService.fetchGroupInfos([items[0].receive_id])
 				}
 				ConversationService.addNewConversation(items[0])
 			})
@@ -377,6 +414,8 @@ class ControlMessageApplyService {
 	applyDeleteTopicMessage(message: SeqResponse<DeleteTopicMessage>) {
 		chatTopicService.applyDeleteTopicMessage(message)
 	}
+
+	applyEditMessage(message: SeqResponse<EditMessage>) {}
 }
 
 export default new ControlMessageApplyService()

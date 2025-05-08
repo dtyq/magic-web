@@ -29,6 +29,9 @@ import { ChatApi } from "@/apis"
 import { User } from "@/types/user"
 import { userStore } from "@/opensource/models/user"
 import LastConversationService from "./LastConversationService"
+import MessageReplyService from "../message/MessageReplyService"
+import groupInfoStore from "@/opensource/stores/groupInfo"
+import { fetchPaddingData } from "@/utils/request"
 
 /**
  * 会话服务
@@ -66,6 +69,8 @@ class ConversationService {
 		)
 		if (cache) {
 			conversationSiderbarStore.setConversationSiderbarGroups(cache)
+		} else {
+			conversationSiderbarStore.resetConversationSiderbarGroups()
 		}
 
 		// 从数据库加载会话
@@ -78,11 +83,27 @@ class ConversationService {
 	}
 
 	/**
+	 * 重置会话
+	 */
+	reset() {
+		conversationSiderbarStore.resetConversationSiderbarGroups()
+		this.switchConversation()
+		this.magicId = undefined
+		this.organizationCode = undefined
+	}
+
+	/**
 	 * 刷新会话数据
 	 * @param conversationList 会话列表
 	 */
 	refreshConversationData(conversationList: Conversation[]) {
-		ChatApi.getConversationList(conversationList.map((item) => item.id)).then(({ items }) => {
+		const ids = conversationList.map((item) => item.id)
+		return fetchPaddingData(({ page_token }) => {
+			return ChatApi.getConversationList(ids, {
+				page_token,
+				status: ConversationStatus.Normal,
+			})
+		}).then((items) => {
 			if (items.length) {
 				// 更新会话信息
 				this.updateConversations(items)
@@ -136,6 +157,7 @@ class ConversationService {
 		})
 
 		this.deleteConversation(conversationId)
+		conversationStore.setCurrentConversation(undefined)
 	}
 
 	/**
@@ -175,10 +197,22 @@ class ConversationService {
 			// 清除Agent信息
 			ConversationTaskService.clearAgentInfo()
 
+			// 设置编辑器状态
+			EditorStore.setConversationId(conversation.id)
+			EditorStore.setTopicId(conversation.current_topic_id ?? "")
+
+			// 获取会话用户/群组信息
+			if (!conversation.isGroupConversation) {
+				userInfoService.fetchUserInfos([conversation.receive_id], 2)
+			}
+
 			// 如果是AI会话
 			if (conversation.isAiConversation) {
 				await this.initAiConversation(conversation)
 			}
+
+			// 重置引用消息
+			MessageReplyService.reset()
 
 			// 初始化会话消息
 			this.initConversationMessages(conversation)
@@ -202,29 +236,29 @@ class ConversationService {
 	}
 
 	initConversationMessages(conversation: Conversation) {
-		// if (
-		// 	// 是 AI 会话，并且有话题 id
-		// 	(conversation.isAiConversation && conversation.current_topic_id) ||
-		// 	// 不是 AI 会话
-		// 	!conversation.isAiConversation
-		// ) {
 		// 当前话题
 		const messageTopicId = conversation.isAiConversation ? conversation.current_topic_id : ""
 
-		// 初始化消息列表
-		MessageService.initMessages(conversation.id, messageTopicId).then(() => {
-			const lastMessage = last(MessageStore.messages)
-			if (lastMessage) {
-				// 更新最后一条消息渲染
-				this.updateLastReceiveMessage(conversation.id, {
-					time: lastMessage.message.send_time,
-					seq_id: lastMessage.message_id,
-					type: lastMessage.message.type,
-					text: getSlicedText(lastMessage.message),
-					topic_id: lastMessage.message.topic_id ?? "",
-				})
-			}
-		})
+		// 如果 AI 会话且没有话题 id，则重置消息列表
+		if (conversation.isAiConversation && !messageTopicId) {
+			MessageService.reset()
+		} else {
+			// 初始化消息列表
+			MessageService.initMessages(conversation.id, messageTopicId).then(() => {
+				const lastMessage = last(MessageStore.messages)
+				if (lastMessage) {
+					// 更新最后一条消息渲染
+					this.updateLastReceiveMessage(conversation.id, {
+						time: lastMessage.message.send_time,
+						seq_id: lastMessage.message_id,
+						...getSlicedText(lastMessage.message, lastMessage.revoked),
+						topic_id: lastMessage.message.topic_id ?? "",
+					})
+				} else {
+					this.clearLastReceiveMessage(conversation.id)
+				}
+			})
+		}
 
 		// 减少未读数量
 		console.log(
@@ -237,7 +271,6 @@ class ConversationService {
 			messageTopicId,
 			conversation.topic_unread_dots.get(messageTopicId) ?? 0,
 		)
-		// }
 	}
 
 	/**
@@ -246,7 +279,11 @@ class ConversationService {
 	 */
 	initGroupConversation(conversation: Conversation) {
 		// 拉取群聊信息
-		groupInfoService.fetchGroupInfos([conversation.receive_id])
+		groupInfoService.fetchGroupInfos([conversation.receive_id]).then((res) => {
+			if (res.length) {
+				groupInfoStore.setCurrentGroup(res[0])
+			}
+		})
 		// 拉取群聊成员
 		groupInfoService.fetchGroupMembers(conversation.receive_id)
 	}
@@ -264,22 +301,39 @@ class ConversationService {
 			MessageCacheService.initTopicsMessage(userInfo)
 		})
 
-		// 获取机器人信息
-		ChatApi.getAiAssistantBotInfo({ user_id: conversation.receive_id }).then((botInfo) => {
-			// 获取定时任务列表
-			ConversationTaskService.switchAgent(botInfo.root_id)
-			// 初始化快捷指令
-			ChatApi.getConversationList([conversation.id]).then(({ items }) => {
-				ConversationBotDataService.switchConversation(
-					conversation.id,
-					conversation.receive_id,
-					botInfo,
-					items[0].instructs,
-				)
-			})
-		})
+		// 初始化会话 agent 信息
+		this.initConversationBotInfo(conversation)
 	}
 
+	/**
+	 * 初始化会话 agent 信息
+	 * @param conversation 会话
+	 * @returns 会话
+	 */
+	initConversationBotInfo(conversation: Conversation) {
+		// 获取机器人信息
+		return ChatApi.getAiAssistantBotInfo({ user_id: conversation.receive_id }).then(
+			async (botInfo) => {
+				if (!botInfo) {
+					console.error("botInfo is null, receive_id:", conversation.receive_id)
+					return
+				}
+				// 获取定时任务列表
+				ConversationTaskService.switchAgent(botInfo.root_id)
+				// 初始化快捷指令
+				return ChatApi.getConversationList([conversation.id]).then(({ items }) => {
+					if (items.length) {
+						ConversationBotDataService.switchConversation(
+							conversation.id,
+							items[0].receive_id,
+							botInfo,
+							items[0].instructs,
+						)
+					}
+				})
+			},
+		)
+	}
 	/**
 	 * 创建会话
 	 * @param receiveType 接收者类型
@@ -310,8 +364,6 @@ class ConversationService {
 
 				const conversationList = conversations.map((item) => new Conversation(item))
 
-				this.refreshConversationData(conversationList)
-
 				conversationStore.setConversations(conversationList)
 
 				// 如果当前会话为空,或者不是当前组织的会话，则设置当前会话
@@ -324,7 +376,7 @@ class ConversationService {
 						LastConversationService.getLastConversation(
 							this.magicId,
 							this.organizationCode,
-						) ?? conversationList?.[0].id,
+						) ?? conversationList?.[0]?.id,
 					)
 					this.switchConversation(lastConversation)
 				}
@@ -333,8 +385,9 @@ class ConversationService {
 					this.calcSidebarConversations()
 				}
 
-				// 重新拉取一遍用户信息和群聊信息, 保证数据最新
-				requestIdleCallback(() => {
+				// 刷新会话数据
+				this.refreshConversationData(conversationList).then(() => {
+					// 重新拉取一遍用户信息和群聊信息, 保证数据最新
 					this.refreshConversationReceiveData()
 				})
 			},
@@ -538,10 +591,43 @@ class ConversationService {
 
 			conversationStore.updateConversationCurrentTopicId(conversationId, topicId ?? "")
 
+			// 重置引用消息
+			MessageReplyService.reset()
+
 			this.initConversationMessages(conversation)
 
 			// 更新数据库
 			ConversationDbServices.updateCurrentTopicId(conversationId, topicId ?? "")
+		}
+	}
+
+	clearCurrentTopic(conversationId: string) {
+		if (!conversationId) return
+		EditorStore.setLastConversationId(conversationStore.currentConversation?.id ?? "")
+		EditorStore.setLastTopicId(conversationStore.currentConversation?.current_topic_id ?? "")
+
+		const conversation = conversationStore.conversations[conversationId]
+		if (conversation) {
+			conversationStore.updateConversationCurrentTopicId(conversationId, "")
+
+			// 减少当前话题未读数量
+			const topicUnreadDots = conversation.topic_unread_dots.get("") ?? 0
+			if (topicUnreadDots > 0) {
+				DotsService.reduceTopicUnreadDots(
+					conversation.user_organization_code,
+					conversationId,
+					"",
+					topicUnreadDots,
+				)
+			}
+
+			// 重置引用消息
+			MessageReplyService.reset()
+
+			this.initConversationMessages(conversation)
+
+			// 更新数据库
+			ConversationDbServices.updateCurrentTopicId(conversationId, "")
 		}
 	}
 
@@ -643,6 +729,18 @@ class ConversationService {
 		}
 	}
 
+	/**
+	 * 清空最后一条消息
+	 * @param conversationId 会话ID
+	 */
+	clearLastReceiveMessage(conversationId: string) {
+		if (!conversationId) return
+		conversationStore.updateConversationLastMessage(conversationId, undefined)
+		// 更新数据库
+		ConversationDbServices.updateConversation(conversationId, {
+			last_receive_message: undefined,
+		})
+	}
 	/**
 	 * 开始会话输入
 	 * @param conversation_id 会话ID

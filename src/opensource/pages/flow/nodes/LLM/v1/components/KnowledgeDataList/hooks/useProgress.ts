@@ -1,5 +1,5 @@
 import type { Knowledge } from "@/types/knowledge"
-import { useCurrentNode } from "@dtyq/magic-flow/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
+import { useCurrentNode } from "@dtyq/magic-flow/dist/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
 import { useMemoizedFn } from "ahooks"
 import React, { useEffect, useMemo, useRef } from "react"
 import { get } from "lodash-es"
@@ -16,13 +16,12 @@ export default function useProgress({ knowledgeListName }: UseProgressProps) {
 		[] as Knowledge.KnowledgeDatabaseProgress[],
 	)
 
-    const extraData = useCommercial()
-    const isCommercial = useMemo(() => {
-        return !!extraData
-    }, [extraData])
+	const extraData = useCommercial()
+	const isCommercial = useMemo(() => {
+		return !!extraData
+	}, [extraData])
 
 	const { currentNode } = useCurrentNode()
-
 
 	const intervalId = useRef<NodeJS.Timeout>()
 
@@ -65,7 +64,7 @@ export default function useProgress({ knowledgeListName }: UseProgressProps) {
 	})
 
 	useEffect(() => {
-        if(!isCommercial) return
+		if (!isCommercial) return
 		const id = initInterval()
 		return () => {
 			clearInterval(id)

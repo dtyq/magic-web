@@ -3,6 +3,7 @@ import type { VectorKnowledge, WithPage } from "@/types/flow"
 import type { Knowledge } from "@/types/knowledge"
 import type { HttpClient } from "../core/HttpClient"
 import { RequestUrl } from "../constant"
+import { knowledgeType } from "@/opensource/pages/vectorKnowledge/constant"
 
 export const generateKnowledgeApi = (fetch: HttpClient) => ({
 	/**
@@ -33,11 +34,13 @@ export const generateKnowledgeApi = (fetch: HttpClient) => ({
 		page,
 		pageSize,
 		searchType,
+		type,
 	}: {
 		name: string
 		page: number
 		pageSize: number
 		searchType: VectorKnowledge.SearchType
+		type: knowledgeType
 	}) {
 		return fetch.post<WithPage<Knowledge.KnowledgeItem[]>>(
 			genRequestUrl(RequestUrl.getKnowledgeList),
@@ -46,6 +49,7 @@ export const generateKnowledgeApi = (fetch: HttpClient) => ({
 				page,
 				page_size: pageSize,
 				search_type: searchType,
+				type,
 			},
 		)
 	},
@@ -101,6 +105,22 @@ export const generateKnowledgeApi = (fetch: HttpClient) => ({
 	},
 
 	/**
+	 * 更新知识库的文档
+	 */
+	updateKnowledgeDocument(params: Knowledge.UpdateKnowledgeDocumentParams) {
+		return fetch.put<Knowledge.Detail>(
+			genRequestUrl(RequestUrl.updateKnowledgeDocument, {
+				knowledge_code: params.knowledge_code,
+				document_code: params.document_code,
+			}),
+			{
+				name: params.name,
+				enabled: params.enabled,
+			},
+		)
+	},
+
+	/**
 	 * 删除知识库的文档
 	 */
 	deleteKnowledgeDocument(params: Knowledge.DeleteKnowledgeDocumentParams) {
@@ -109,6 +129,25 @@ export const generateKnowledgeApi = (fetch: HttpClient) => ({
 				knowledge_code: params.knowledge_code,
 				document_code: params.document_code,
 			}),
+		)
+	},
+
+	/**
+	 * 分段预览
+	 */
+	segmentPreview(params: Knowledge.SegmentPreviewParams) {
+		return fetch.post<WithPage<Knowledge.FragmentItem[]>>(RequestUrl.segmentPreview, params)
+	},
+
+	/**
+	 * 召回测试
+	 */
+	recallTest(params: { knowledge_code: string; query: string }) {
+		return fetch.post<WithPage<Knowledge.FragmentItem[]>>(
+			genRequestUrl(RequestUrl.recallTest, {
+				knowledge_code: params.knowledge_code,
+			}),
+			{ query: params.query },
 		)
 	},
 
@@ -200,7 +239,7 @@ export const generateKnowledgeApi = (fetch: HttpClient) => ({
 	 * 获取可用的天书知识库列表
 	 */
 	getUseableTeamshareDatabaseList() {
-		return fetch.get<WithPage<Knowledge.TeamshareKnowledgeItem[]>>(
+		return fetch.get<WithPage<Knowledge.KnowledgeDatabaseItem[]>>(
 			RequestUrl.getUseableTeamshareDatabaseList,
 		)
 	},
@@ -209,7 +248,7 @@ export const generateKnowledgeApi = (fetch: HttpClient) => ({
 	 * 获取有权限的知识库的进度
 	 */
 	getTeamshareKnowledgeProgress(params: Knowledge.GetTeamshareKnowledgeProgressParams) {
-		return fetch.post<WithPage<Knowledge.TeamshareKnowledgeProgress[]>>(
+		return fetch.post<WithPage<Knowledge.KnowledgeDatabaseProgress[]>>(
 			RequestUrl.getTeamshareKnowledgeProgress,
 			params,
 		)
@@ -220,5 +259,21 @@ export const generateKnowledgeApi = (fetch: HttpClient) => ({
 	 */
 	createTeamshareKnowledgeVector(params: Knowledge.CreateTeamshareKnowledgeVectorParams) {
 		return fetch.post<null>(RequestUrl.createTeamshareKnowledgeVector, params)
+	},
+
+	/**
+	 * 根据类型获取所有激活模型
+	 */
+	getActiveModelByCategory(params: Knowledge.GetActiveModelByCategoryParams) {
+		return fetch.get<Knowledge.ServiceProvider[]>(
+			genRequestUrl(RequestUrl.getActiveModelByCategory, {}, params),
+		)
+	},
+
+	/**
+	 * 获取官方重排模型列表
+	 */
+	getRerankModels() {
+		return fetch.get<Knowledge.ServiceProvider[]>(RequestUrl.getRerankModels)
 	},
 })

@@ -2,16 +2,16 @@ import { Form } from "antd"
 import { useForm } from "antd/lib/form/Form"
 import { useMemo } from "react"
 import { useMemoizedFn } from "ahooks"
-import { useFlow } from "@dtyq/magic-flow/MagicFlow/context/FlowContext/useFlow"
-import { useCurrentNode } from "@dtyq/magic-flow/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
+import { useNodeConfigActions } from "@dtyq/magic-flow/dist/MagicFlow/context/FlowContext/useFlow"
+import { useCurrentNode } from "@dtyq/magic-flow/dist/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
 import { set, cloneDeep } from "lodash-es"
-import MagicExpressionWrap from "@dtyq/magic-flow/common/BaseUI/MagicExpressionWrap"
-import { ExpressionMode } from "@dtyq/magic-flow/MagicExpressionWidget/constant"
-import MagicJsonSchemaEditor from "@dtyq/magic-flow/MagicJsonSchemaEditor"
-import { ShowColumns } from "@dtyq/magic-flow/MagicJsonSchemaEditor/constants"
-import { FormItemType } from "@dtyq/magic-flow/MagicExpressionWidget/types"
+import MagicExpressionWrap from "@dtyq/magic-flow/dist/common/BaseUI/MagicExpressionWrap"
+import { ExpressionMode } from "@dtyq/magic-flow/dist/MagicExpressionWidget/constant"
+import MagicJsonSchemaEditor from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor"
+import { ShowColumns } from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/constants"
+import { FormItemType } from "@dtyq/magic-flow/dist/MagicExpressionWidget/types"
 import type { Widget } from "@/types/flow"
-import type Schema from "@dtyq/magic-flow/MagicJsonSchemaEditor/types/Schema"
+import type Schema from "@dtyq/magic-flow/dist/MagicJsonSchemaEditor/types/Schema"
 import { useTranslation } from "react-i18next"
 import { getExpressionPlaceholder } from "@/opensource/pages/flow/utils/helpers"
 import usePrevious from "../../../common/hooks/usePrevious"
@@ -24,32 +24,30 @@ import { v0Template } from "./template"
 export default function VectorV0() {
 	const { t } = useTranslation()
 	const [form] = useForm()
-	const { nodeConfig, notifyNodeChange } = useFlow()
+	const { updateNodeConfig } = useNodeConfigActions()
 
 	const { currentNode } = useCurrentNode()
 
 	const { expressionDataSource } = usePrevious()
 
 	const onValuesChange = useMemoizedFn((changeValues) => {
-		if (!currentNode || !nodeConfig || !nodeConfig[currentNode?.node_id]) return
-		const currentNodeConfig = nodeConfig[currentNode?.node_id]
+		if (!currentNode) return
 
 		Object.entries(changeValues).forEach(([changeKey, changeValue]) => {
 			if (changeKey === "metadata") {
 				set(
-					currentNodeConfig,
+					currentNode,
 					["params", "metadata", "structure"],
 					(changeValue as Widget<Schema>)?.structure,
 				)
 				return
 			}
-			set(currentNodeConfig, ["params", changeKey], changeValue)
+			set(currentNode, ["params", changeKey], changeValue)
 		})
 
-		notifyNodeChange?.()
-		// updateNodeConfig({
-		// 	...currentNodeConfig,
-		// })
+		updateNodeConfig({
+			...currentNode,
+		})
 	})
 
 	const { handleOldKnowledge } = useOldKnowledgeHandle()

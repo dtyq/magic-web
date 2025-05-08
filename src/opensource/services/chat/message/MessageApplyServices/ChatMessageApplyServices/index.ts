@@ -5,11 +5,13 @@ import type {
 	ConversationMessage,
 } from "@/types/chat/conversation_message"
 import {
+	AggregateAISearchCardDataType,
 	AIImagesDataType,
 	ConversationMessageStatus,
 	ConversationMessageType,
 	HDImageDataType,
 } from "@/types/chat/conversation_message"
+import pubsub from "@/utils/pubsub"
 import type { SeqResponse } from "@/types/request"
 
 // 导入新的服务
@@ -131,6 +133,14 @@ class ChatMessageApplyService {
 			)
 		}
 
+		if (message.message.type === ConversationMessageType.AggregateAISearchCard) {
+			return (
+				(message as SeqResponse<AggregateAISearchCardConversationMessage>).message
+					.aggregate_ai_search_card?.type ===
+				AggregateAISearchCardDataType.SearchDeepLevel
+			)
+		}
+
 		return [
 			ConversationMessageType.Text,
 			ConversationMessageType.RichText,
@@ -161,6 +171,7 @@ class ChatMessageApplyService {
 
 		switch (message.message.type) {
 			case ConversationMessageType.Text:
+				pubsub.publish("super_magic_new_message", message)
 				StreamMessageApplyService.recordMessageInfo(
 					message as SeqResponse<ConversationMessage>,
 				)
@@ -217,22 +228,27 @@ class ChatMessageApplyService {
 		MessageService.addReceivedMessage(message)
 
 		// 如果是 AI 会话，并且当前没有话题 Id，自动设置上
-		if (conversation?.isAiConversation && !conversation.current_topic_id) {
-			ConversationService.switchTopic(message.conversation_id, message.message.topic_id ?? "")
+		if (!conversation.current_topic_id && message.message.topic_id) {
+			ConversationService.switchTopic(message.conversation_id, message.message.topic_id)
 		}
 
-		// 如果是 AI 会话，此时消息列表的数量为 2，调用智能重命名
-		if (conversation?.isAiConversation && MessageStore.messages.length === 2) {
-			// 调用智能重命名
-			chatTopicService.getAndSetMagicTopicName(message.message.topic_id ?? "")
+		if (
+			ConversationStore.currentConversation?.id === message.conversation_id &&
+			ConversationStore.currentConversation?.current_topic_id === message.message.topic_id &&
+			conversation?.isAiConversation
+		) {
+			// 如果是 AI 会话，此时消息列表的数量为 2，调用智能重命名
+			if (MessageStore.messages.length === 2 && !isHistoryMessage) {
+				// 调用智能重命名
+				chatTopicService.getAndSetMagicTopicName(message.message.topic_id ?? "")
+			}
 		}
 
 		// 更新会话最后一条消息
 		ConversationService.updateLastReceiveMessage(message.conversation_id, {
 			time: message.message.send_time,
 			seq_id: message.seq_id,
-			type: message.message.type,
-			text: getSlicedText(message.message),
+			...getSlicedText(message.message, message.message.revoked),
 			topic_id: message.message.topic_id ?? "",
 		})
 

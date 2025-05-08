@@ -2,13 +2,14 @@ import MagicSpin from "@/opensource/components/base/MagicSpin"
 import { Avatar, Flex, Input, List, Select } from "antd"
 import { useEffect, useMemo, useState } from "react"
 import { FlowRouteType, VectorKnowledge } from "@/types/flow"
-import { useLocation, useParams, useNavigate } from "react-router"
+import { useLocation, useParams } from "react-router"
+import { useNavigate } from "@/opensource/hooks/useNavigate"
 import FlowEmptyImage from "@/assets/logos/empty-flow.png"
 import ToolsEmptyImage from "@/assets/logos/empty-tools.svg"
 import { IconSearch } from "@tabler/icons-react"
 import MagicButton from "@/opensource/components/base/MagicButton"
 import InfiniteScroll from "react-infinite-scroll-component"
-import type { MagicFlow } from "@dtyq/magic-flow/MagicFlow/types/flow"
+import type { MagicFlow } from "@dtyq/magic-flow/dist/MagicFlow/types/flow"
 import { useTranslation } from "react-i18next"
 import { resolveToString } from "@dtyq/es6-template-strings"
 import AddOrUpdateFlow from "./components/AddOrUpdateFlow"
@@ -93,7 +94,7 @@ function FlowListPage() {
 
 	/** 创建工作流 */
 	const createHandler = useMemoizedFn(() => {
-		if (flowType === FlowRouteType.Knowledge) {
+		if (flowType === FlowRouteType.VectorKnowledge) {
 			handleCreateKnowledge()
 		} else {
 			handleCardCancel()
@@ -112,7 +113,7 @@ function FlowListPage() {
 				<Flex align="center" justify="space-between" className={styles.top}>
 					<div className={styles.leftTitle}>{`${title}（${total}）`}</div>
 					<Flex align="center" gap={6}>
-						{flowType === FlowRouteType.Knowledge && (
+						{flowType === FlowRouteType.VectorKnowledge && (
 							<Select
 								style={{ width: 180 }}
 								options={vkSearchTypeOptions}
@@ -232,7 +233,7 @@ function FlowListPage() {
 					</div>
 				</MagicSpin>
 			</Flex>
-			{flowType !== FlowRouteType.Knowledge && (
+			{flowType !== FlowRouteType.VectorKnowledge && (
 				<RightDrawer
 					open={expandPanelOpen}
 					openAddOrUpdateFlow={openAddOrUpdateFlow}
@@ -244,7 +245,7 @@ function FlowListPage() {
 					getDropdownItems={getRightPanelDropdownItems}
 				/>
 			)}
-			{flowType !== FlowRouteType.Knowledge && (
+			{flowType !== FlowRouteType.VectorKnowledge && (
 				<AddOrUpdateFlow
 					flow={currentFlow}
 					tool={currentTool}
@@ -257,7 +258,7 @@ function FlowListPage() {
 					title={title}
 				/>
 			)}
-			{flowType === FlowRouteType.Knowledge && (
+			{flowType === FlowRouteType.VectorKnowledge && (
 				<UpdateKnowledgeModal
 					title={title}
 					details={currentFlow}

@@ -69,5 +69,5 @@ export function textToTextColor(name?: string) {
 }
 
 export const isValidUrl = (url: string) => {
-    return /^https?:\/\//.test(url);
-};
+	return /^https?:\/\//.test(url)
+}

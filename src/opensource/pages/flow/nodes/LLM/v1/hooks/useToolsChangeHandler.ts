@@ -1,13 +1,13 @@
 import type { ToolSelectedItem } from "@/opensource/pages/flow/components/ToolsSelect/types"
-import { useFlow } from "@dtyq/magic-flow/MagicFlow/context/FlowContext/useFlow"
-import { useCurrentNode } from "@dtyq/magic-flow/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
+import { useNodeConfigActions } from "@dtyq/magic-flow/dist/MagicFlow/context/FlowContext/useFlow"
+import { useCurrentNode } from "@dtyq/magic-flow/dist/MagicFlow/nodes/common/context/CurrentNode/useCurrentNode"
 import { useMemoizedFn } from "ahooks"
 import { set, map, merge } from "lodash-es"
 
 export default function useToolsChangeHandlerV0() {
 	const { currentNode } = useCurrentNode()
 
-	const { updateNodeConfig } = useFlow()
+	const { updateNodeConfig } = useNodeConfigActions()
 
 	// 处理工具变更
 	const handleToolsChanged = useMemoizedFn((changeValues) => {

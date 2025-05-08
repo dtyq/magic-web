@@ -3,14 +3,14 @@
  */
 import MagicButton from "@/opensource/components/base/MagicButton"
 import { useTranslation } from "react-i18next"
-import type { MagicFlowInstance, NodeSchema } from "@dtyq/magic-flow/MagicFlow"
-import MagicFlowComponent from "@dtyq/magic-flow/MagicFlow"
-import { MaterialSourceProvider } from "@dtyq/magic-flow/MagicFlow/context/MaterialSourceContext/MaterialSourceContext"
-import { NodeMapProvider } from "@dtyq/magic-flow/common/context/NodeMap/Provider"
+import type { MagicFlowInstance, NodeSchema } from "@dtyq/magic-flow/dist/MagicFlow"
+import MagicFlowComponent from "@dtyq/magic-flow/dist/MagicFlow"
+import { MaterialSourceProvider } from "@dtyq/magic-flow/dist/MagicFlow/context/MaterialSourceContext/MaterialSourceContext"
+import { NodeMapProvider } from "@dtyq/magic-flow/dist/common/context/NodeMap/Provider"
 import { RoutePath } from "@/const/routes"
 import { ToastContainer } from "react-toastify"
-import { NodeChangeListenerProvider } from "@dtyq/magic-flow/MagicFlow/context/NodeChangeListenerContext/NodeChangeListenerContext"
-import { ExtraNodeConfigProvider } from "@dtyq/magic-flow/MagicFlow/context/ExtraNodeConfigContext/Provider"
+import { NodeChangeListenerProvider } from "@dtyq/magic-flow/dist/MagicFlow/context/NodeChangeListenerContext/NodeChangeListenerContext"
+import { ExtraNodeConfigProvider } from "@dtyq/magic-flow/dist/MagicFlow/context/ExtraNodeConfigContext/Provider"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ConfigProvider, message } from "antd"
 import { useMemoizedFn, useSize } from "ahooks"
@@ -19,8 +19,9 @@ import locale from "antd/es/locale/zh_CN"
 import { IconChevronLeft, IconMenu2, IconRobot } from "@tabler/icons-react"
 import DefaultImage from "@/assets/logos/agent-avatar.jpg"
 import { cx } from "antd-style"
-import { useLocation, useNavigate, useParams } from "react-router"
-import { customNodeType } from "./constants"
+import { useLocation, useParams } from "react-router"
+import { useNavigate } from "@/opensource/hooks/useNavigate"
+import { customNodeType, OmitNodeKeys } from "./constants"
 import { installAllNodes } from "./utils"
 import styles from "./index.module.less"
 import TestFlowButton from "./components/TestFlowButton"
@@ -58,6 +59,7 @@ import { useGlobalLanguage } from "@/opensource/models/config/hooks"
 import { flowService } from "@/opensource/services"
 import { ComponentVersionMap } from "./nodes"
 import CommercialProvider from "./context/CommercialContext"
+import FlowInstanceProvider from "./context/FlowInstanceContext"
 // import flow from "./mock/flow"
 
 registerEditor()
@@ -297,14 +299,14 @@ export default function BaseFlow({ extraData }: BaseFlowProps) {
 						/>
 						{/* 添加AI助手按钮 */}
 
-						{isEditRight && (
+						{/* {isEditRight && isCommercial && (
 							<MagicButton
 								onClick={() => setShowFlowAssistant((prev) => !prev)}
 								icon={<IconRobot size={16} />}
 							>
 								{t("common.flowAssistant", { ns: "flow" })}
 							</MagicButton>
-						)}
+						)} */}
 
 						{/* <SaveDraftButton
 							flowInstance={flowInstance}
@@ -410,88 +412,82 @@ export default function BaseFlow({ extraData }: BaseFlowProps) {
 
 	const { subFlow, tools } = useMaterialSource()
 
+	const nodeStyleMap = useMemo(() => {
+		return {
+			[customNodeType.Start]: {
+				width: isMainFlow ? "480px" : "900px",
+			},
+		}
+	}, [isMainFlow])
+
 	return (
-		<CommercialProvider extraData={extraData}>
-			<NodeMapProvider nodeMap={nodeSchemaMap}>
-				{/* @ts-ignore */}
-				<MaterialSourceProvider subFlow={subFlow} tools={tools}>
+		<FlowInstanceProvider flowInstance={flowInstance}>
+			<CommercialProvider extraData={extraData}>
+				<NodeMapProvider nodeMap={nodeSchemaMap}>
 					{/* @ts-ignore */}
-					<NodeChangeListenerProvider customListener={nodeChangeEventListener}>
-						<ExtraNodeConfigProvider
-							nodeStyleMap={{
-								[customNodeType.Start]: {
-									width: isMainFlow ? "480px" : "900px",
-								},
-							}}
-						>
-							{/* @ts-ignore */}
-							<ConfigProvider locale={locale}>
-								<CustomFlowProvider
-									testFlowResult={testResult}
-									setCurrentFlow={setCurrentFlow}
-								>
-									<div
-										className={cx(styles.flowWrapper, {
-											// [styles.mainFlow]: isMainFlow,
-										})}
+					<MaterialSourceProvider subFlow={subFlow} tools={tools}>
+						{/* @ts-ignore */}
+						<NodeChangeListenerProvider customListener={nodeChangeEventListener}>
+							<ExtraNodeConfigProvider nodeStyleMap={nodeStyleMap}>
+								{/* @ts-ignore */}
+								<ConfigProvider locale={locale}>
+									<CustomFlowProvider
+										testFlowResult={testResult}
+										setCurrentFlow={setCurrentFlow}
 									>
-										{/* @ts-ignore */}
-										<MagicFlowComponent
-											header={flowHeader}
-											showExtraFlowInfo={false}
-											ref={flowInstance}
-											flow={currentFlow}
-											onlyRenderVisibleElements
-											layoutOnMount={false}
-											allowDebug
-											// @ts-ignore
-											flowInteractionRef={flowInteractionRef}
-											omitNodeKeys={[
-												"data",
-												"expandParent",
-												"extent",
-												"parentId",
-												"deletable",
-												"position",
-												"step",
-												"zIndex",
-												"type",
-											]}
-										/>
-									</div>
+										<div
+											className={cx(styles.flowWrapper, {
+												// [styles.mainFlow]: isMainFlow,
+											})}
+										>
+											{/* @ts-ignore */}
+											<MagicFlowComponent
+												header={flowHeader}
+												showExtraFlowInfo={false}
+												ref={flowInstance}
+												flow={currentFlow}
+												onlyRenderVisibleElements
+												layoutOnMount={false}
+												allowDebug
+												// @ts-ignore
+												flowInteractionRef={flowInteractionRef}
+												omitNodeKeys={OmitNodeKeys}
+											/>
+										</div>
 
-									{/* 添加FlowAssistant组件 */}
-									{isCommercial && showFlowAssistant && isEditRight && (
-										<FlowAssistant
-											flowInteractionRef={flowInteractionRef}
-											flow={currentFlow}
-											onClose={() => setShowFlowAssistant(false)}
-											isAgent={isAgent}
-											saveDraft={saveDraft}
-											isEditRight={isEditRight}
-										/>
-									)}
+										{/* 添加FlowAssistant组件 */}
+										{isCommercial && showFlowAssistant && isEditRight && (
+											<FlowAssistant
+												flowInteractionRef={flowInteractionRef}
+												flow={currentFlow}
+												onClose={() => setShowFlowAssistant(false)}
+												isAgent={isAgent}
+												saveDraft={saveDraft}
+												isEditRight={isEditRight}
+											/>
+										)}
 
-									<ToastContainer
-										toastClassName="toast"
-										position="top-right"
-										autoClose={2000}
-										hideProgressBar
-										newestOnTop={false}
-										closeOnClick
-										rtl={false}
-										pauseOnFocusLoss
-										draggable
-										pauseOnHover
-										className={styles.toastContainer}
-									/>
-									{EditAgentModal}
-								</CustomFlowProvider>
-							</ConfigProvider>
-						</ExtraNodeConfigProvider>
-					</NodeChangeListenerProvider>
-				</MaterialSourceProvider>
-			</NodeMapProvider>
-		</CommercialProvider>
+										<ToastContainer
+											toastClassName="toast"
+											position="top-right"
+											autoClose={2000}
+											hideProgressBar
+											newestOnTop={false}
+											closeOnClick
+											rtl={false}
+											pauseOnFocusLoss
+											draggable
+											pauseOnHover
+											className={styles.toastContainer}
+										/>
+										{EditAgentModal}
+									</CustomFlowProvider>
+								</ConfigProvider>
+							</ExtraNodeConfigProvider>
+						</NodeChangeListenerProvider>
+					</MaterialSourceProvider>
+				</NodeMapProvider>
+			</CommercialProvider>
+		</FlowInstanceProvider>
 	)
 }

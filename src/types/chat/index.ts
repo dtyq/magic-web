@@ -3,10 +3,13 @@ import type { User } from "../user"
 import type {
 	AggregateAISearchCardConversationMessage,
 	ConversationMessage,
+	SuperMagicContent
+} from "./conversation_message"
+import type {
 	HideConversationMessage,
 	MuteConversationMessage,
 	TopConversationMessage,
-} from "./conversation_message"
+} from "./control_message"
 import type { CreateTopicMessage, DeleteTopicMessage, UpdateTopicMessage } from "./topic"
 import type { ConversationFromService, OpenConversationMessage } from "./conversation"
 import type {
@@ -14,6 +17,7 @@ import type {
 	EndConversationInputMessage,
 } from "./conversation_input"
 import type { SeenMessage } from "./seen_message"
+import { AddFriendSuccessMessage } from "./control_message"
 
 /** 消息接收方类型 */
 export const enum MessageReceiveType {
@@ -77,7 +81,7 @@ export type EventResponse<E extends EventType> = {
 /**
  * 控制事件类型
  */
-export const enum ControlEventMessageType {
+export enum ControlEventMessageType {
 	/** 打开（创建）会话 */
 	OpenConversation = "open_conversation",
 	/** 创建会话 */
@@ -114,6 +118,10 @@ export const enum ControlEventMessageType {
 	GroupUsersRemove = "group_users_remove",
 	/** 群更新 */
 	GroupUpdate = "group_update",
+	/** 添加好友成功 */
+	AddFriendSuccess = "add_friend_success",
+	/** 编辑消息 */
+	EditMessage = "edit_message",
 }
 
 /**
@@ -132,3 +140,5 @@ export type CMessage =
 	| MuteConversationMessage
 	| HideConversationMessage
 	| AggregateAISearchCardConversationMessage<true>
+	| AddFriendSuccessMessage
+	| SuperMagicContent

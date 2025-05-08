@@ -15,14 +15,12 @@ import chatWebSocket from "@/opensource/apis/clients/chatWebSocket"
 import groupInfoService from "@/opensource/services/groupInfo"
 import userInfoService from "@/opensource/services/userInfo"
 import chatDb from "@/opensource/database/chat"
-import { EventType } from "@/types/chat"
-import { LoginResponse } from "@/types/request"
-import { genAppMessageId } from "@/utils/random"
-import { encodeSocketIoMessage } from "@/utils/socketio"
 import MessageSeqIdService from "@/opensource/services/chat/message/MessageSeqIdService"
 import MessageService from "@/opensource/services/chat/message/MessageService"
 import conversationService from "@/opensource/services/chat/conversation/ConversationService"
-import MessagePullService from "../chat/message/MessagePullService"
+import { interfaceStore } from "@/opensource/stores/interface"
+import { ChatApi } from "@/apis"
+import ChatFileService from "../chat/file/ChatFileService"
 
 export interface OrganizationResponse {
 	magicOrganizationMap: Record<string, User.MagicOrganization>
@@ -41,6 +39,11 @@ export class UserService {
 	magicId: string | undefined
 	userId: string | undefined
 
+	lastLogin: {
+		authorization: string
+		promise: Promise<void>
+	} | null = null
+
 	constructor(dependencies: typeof apis, service: Container) {
 		this.contactApi = dependencies.ContactApi
 		this.service = service
@@ -50,7 +53,7 @@ export class UserService {
 			console.log("open", { reconnect })
 			if (reconnect) {
 				console.log("重新连接成功，自动登录")
-				this.login()
+				this.login(false)
 			}
 		})
 	}
@@ -137,6 +140,13 @@ export class UserService {
 
 		// 内存状态同步
 		userStore.user.setUserInfo(info)
+
+		// 有值才获取
+		// if (info) {
+		// 	AuthApi.getAdminPermission().then((res) => {
+		// 		userStore.user.isAdmin = res.is_admin
+		// 	})
+		// }
 		return info
 	}
 
@@ -208,7 +218,10 @@ export class UserService {
 	setTeamshareOrganizationCode(organizationCode: string) {
 		const user = new UserRepository()
 		const { magicOrganizationMap } = userStore.user
-		const orgMap = keyBy(Object.values(magicOrganizationMap), "third_platform_organization_code")
+		const orgMap = keyBy(
+			Object.values(magicOrganizationMap),
+			"third_platform_organization_code",
+		)
 		const orgCode = orgMap?.[organizationCode]?.magic_organization_code
 		user.setOrganizationCode(orgCode)
 		user.setTeamshareOrganizationCode(organizationCode)
@@ -286,7 +299,7 @@ export class UserService {
 					})
 				await this.service.get<LoginService>("loginService").organizationSyncStep(response)
 
-				await this.login()
+				await this.login(true)
 			}
 		}
 	}
@@ -377,94 +390,107 @@ export class UserService {
 			.catch(console.error)
 	}
 
-	login() {
+	login(showLoginLoading = true) {
 		const { authorization } = userStore.user
 
 		if (!authorization) {
 			throw new Error("authorization or organization_code is required")
 		}
 
-		return chatWebSocket
-			.sendAsync<LoginResponse>(
-				encodeSocketIoMessage(
-					EventType.Login,
-					{
-						message: {
-							type: "text",
-							text: {
-								content: "登录",
-							},
-							app_message_id: genAppMessageId(),
-						},
-						conversation_id: "",
-					},
-					0,
-					{
-						authorization,
-					},
-				),
-			)
-			.then(async (res) => {
-				userStore.user.setUserInfo(res.data.user)
-				// 切换 chat 数据
-				await this.switchUser(res.data.user)
-			})
-			.catch((err) => {
-				if (err.code === 3103) {
-					console.log(err)
-					// accountBusiness.accountLogout() -》 this.deleteAccount()
-					this.deleteAccount()
-				}
-			})
+		// 如果当前登录的 authorization 与 lastLogin 的 authorization 相同，则返回 lastLogin 的 promise
+		if (authorization === this.lastLogin?.authorization) {
+			return this.lastLogin.promise
+		}
+
+		this.lastLogin = {
+			authorization,
+			promise: ChatApi.login(authorization)
+				.then(async (res) => {
+					userStore.user.setUserInfo(res.data.user)
+					// 切换 chat 数据
+					await this.switchUser(res.data.user, showLoginLoading)
+				})
+				.catch((err) => {
+					if (err.code === 3103) {
+						console.log(err)
+						// accountBusiness.accountLogout() -》 this.deleteAccount()
+						this.deleteAccount()
+					}
+				})
+				.finally(() => {
+					if (this.lastLogin) {
+						this.lastLogin.promise = Promise.resolve()
+					}
+				}),
+		}
+
+		return this.lastLogin.promise
 	}
 
-	async switchUser(magicUser: User.UserInfo) {
-		const magicId = magicUser.magic_id
-		console.log("切换账户", magicId)
-		// 如果当前账户ID与传入的账户ID相同，则不进行切换
-		if (this.magicId !== magicId) {
-			this.magicId = magicId
-			chatDb.switchDb(magicId)
+	/**
+	 * @description 清除 lastLogin
+	 */
+	clearLastLogin() {
+		this.lastLogin = null
+	}
+
+	async switchUser(magicUser: User.UserInfo, showSwitchLoading = true) {
+		try {
+			const magicId = magicUser.magic_id
+			console.log("切换账户", magicId)
+			if (showSwitchLoading) interfaceStore.setIsSwitchingOrganization(true)
+
+			// 如果当前账户ID与传入的账户ID相同，则不进行切换
+			if (this.magicId !== magicId) {
+				this.magicId = magicId
+				chatDb.switchDb(magicId)
+				ChatFileService.init()
+			}
+
+			if (this.userId !== magicUser.user_id) {
+				const db = initDataContextDb(magicUser.magic_id, magicUser.user_id)
+				await userInfoService.loadData(db)
+				await groupInfoService.loadData(db)
+			}
+
+			// 检查所有组织的渲染序列号
+			MessageSeqIdService.checkAllOrganizationRenderSeqId()
+
+			if (this.userId !== magicUser.user_id || this.magicId !== magicUser.magic_id) {
+				// 重置消息数据视图
+				conversationService.reset() // 切换到空会话
+				MessageService.reset()
+			}
+
+			this.userId = magicUser.user_id
+
+			/** 如果是第一次加载，则拉取 消息 */
+			if (!MessageSeqIdService.getGlobalPullSeqId()) {
+				await MessageService.pullMessageOnFirstLoad(
+					magicUser.magic_id,
+					magicUser.organization_code,
+				)
+			} else {
+				await conversationService.init(
+					magicUser.magic_id,
+					magicUser.organization_code,
+					magicUser,
+				)
+				// 拉取离线消息（内部只会应用改组织的信息）
+				MessageService.pullOfflineMessages()
+			}
+
+			// this.conversationGroupBusiness.initConversationGroups(
+			// 	magicUser.magic_id,
+			// 	magicUser.organization_code,
+			// )
+
+			/** 设置消息拉取 循环 */
+			MessageService.init()
+			// this.messagePullBusiness.registerMessagePullLoop()
+			if (showSwitchLoading) interfaceStore.setIsSwitchingOrganization(false)
+		} catch (error) {
+			console.error("切换账户失败", error)
 		}
-
-		const db = initDataContextDb(magicUser.magic_id, magicUser.user_id)
-		await userInfoService.loadData(db)
-		await groupInfoService.loadData(db)
-
-		// 检查所有组织的渲染序列号
-		MessageSeqIdService.checkAllOrganizationRenderSeqId()
-
-		if (this.userId !== magicUser.user_id || this.magicId !== magicUser.magic_id) {
-			// 重置消息数据视图
-			conversationService.switchConversation() // 切换到空会话
-			MessageService.reset()
-		}
-
-		this.userId = magicUser.user_id
-
-		/** 如果是第一次加载，则拉取 消息 */
-		if (!MessageSeqIdService.getGlobalPullSeqId()) {
-			await MessageService.pullMessageOnFirstLoad(
-				magicUser.magic_id,
-				magicUser.organization_code,
-			)
-		} else {
-			await conversationService.init(
-				magicUser.magic_id,
-				magicUser.organization_code,
-				magicUser,
-			)
-			// 拉取离线消息（内部只会应用改组织的信息）
-			MessageService.pullOfflineMessages()
-		}
-
-		// this.conversationGroupBusiness.initConversationGroups(
-		// 	magicUser.magic_id,
-		// 	magicUser.organization_code,
-		// )
-
-		/** 设置消息拉取 循环 */
-		MessageService.init()
-		// this.messagePullBusiness.registerMessagePullLoop()
 	}
 }

@@ -403,18 +403,17 @@
 			"dissolveGroup": "解散群聊",
 			"groupAdmin": "管理",
 			"groupAdminTip": "群权限的相关设置",
-			"groupInWhich": "归属于 ${name}",
+			"groupInWhich": "归属于 {{name}}",
 			"groupName": "群名称",
 			"groupNamePlaceholder": "请输入群名称",
 			"groupNotice": "群公告",
 			"groupType": "群类型",
 			"leaveGroup": "退出群聊",
-			"leaveGroupConfirm": "",
+			"leaveGroupConfirm": "确认退出群组？",
 			"leaveGroupSuccess": "已退出群聊",
 			"ownerLeaveGroupTip": "群主不可退出群聊,请将群转让后再退出",
 			"remove": "移除",
-			"removeGroupConfirm": "",
-      "removeGroupConfirm": "确认解散群组？",
+      		"removeGroupConfirm": "确认解散群组？",
 			"removeGroupSuccess": "解散成功",
 			"removeMember": "移除群成员",
 			"title": "群设置",
@@ -457,7 +456,8 @@
 			"senderImage": "{{username}}发送的图片",
 			"senderVideo": "{{username}}发送的视频",
 			"transpond": "转发",
-			"useHightImageTip": "AI 超清功能会消耗大量算力资源，每月使用次数有限，是否确认使用？"
+			"useHightImageTip": "AI 超清功能会消耗大量算力资源，每月使用次数有限，是否确认使用？",
+			"copy": "复制"
 		},
 		"input": {
 			"calendar": "日程",
@@ -557,6 +557,8 @@
 		},
 		"read": "对方已读",
 		"recall": "撤回",
+		"copyMessageId": "复制ID",
+		"edit": "编辑",
 		"reply": "回复",
 		"resend": "重新发送",
 		"revoke_one_message": "撤回了一条消息",
@@ -587,7 +589,8 @@
 			"groupConversation": "群聊",
 			"message": "消息",
 			"pinned": "置顶",
-			"specialCardMessage": "[ 特殊卡片消息 ]"
+			"specialCardMessage": "[ 特殊卡片消息 ]",
+			"emptyFallbackText": "暂无会话"
 		},
 		"task": "任务",
 		"timedTask": {
@@ -680,7 +683,9 @@
 			"related": "延展",
 			"sources": "来源"
 		},
-		"you": "你"
+		"you": "你",
+		"emptyConversationFallbackText": "和小伙伴们打声招呼吧",
+		"emptyConversationFallbackButtonText": "去联系小伙伴"
 	},
 	"collectModal": {
 		"save": "保存",
@@ -868,7 +873,7 @@
 			"insertCursor": "消息内容中光标位置",
 			"insertInstruction": "插入指令值",
 			"insertLocation": "指令插入位置",
-			"insertLocationTip": "当选择“消息内容中光标位置”时，会根据光标所在位置插入指令，如光标失焦则补充至消息内容后方。",
+			"insertLocationTip": "当选择\"消息内容中光标位置\"时，会根据光标所在位置插入指令，如光标失焦则补充至消息内容后方。",
 			"instructionContent": "指令内容",
 			"instructionContentPlaceholder": "输入指令发送的内容，将会在用户发送消息时，补充在消息中。支持使用@添加指令值。",
 			"instructionDesc": "指令描述",
@@ -1007,7 +1012,8 @@
 		"searchTips": "查询不到任何",
 		"tools": "工具",
 		"toolsNum": "${num} 个工具",
-		"version": "版本"
+		"version": "版本",
+		"viewDetails": "查看详情"
 	},
 	"form": {
 		"groupAvatar": "群头像",
@@ -1047,7 +1053,7 @@
 		"joinShortlist": {
 			"alreadyJoin": "已加入候选名单",
 			"alreadyJoinDescription": "我们将尽快为您发送邀请码，以便您优先体验我们的服务。",
-			"alreadyJoinTitle": "您已成功加入“候选名单”",
+			"alreadyJoinTitle": "您已成功加入\"候选名单\"",
 			"back": "返回上一步",
 			"description": "我们正处于内测阶段，您可以通过加入候选名单获得邀请码体验我们的服务",
 			"emailInvalid": "邮箱格式有误",
@@ -1179,7 +1185,11 @@
 		"placeholder": "请输入内容",
 		"redo": "重做",
 		"rightAlign": "右对齐",
-		"undo": "撤销"
+		"undo": "撤销",
+		"fileTooLarge": "文件太大，请上传小于15MB的文件",
+		"invalidBase64": "文件格式不正确，请上传图片文件",
+		"uploadFailed": "文件上传失败，请重试",
+		"pasteFailed": "图片粘贴失败，请重试"
 	},
 	"search": "搜索",
 	"send": "发送",
@@ -1297,7 +1307,7 @@
 		"notification": "通知",
 		"orgNotAuthorized": "组织暂未授权",
 		"setting": "设置",
-		"superMagic": "",
+		"superMagic": "超级麦吉",
 		"switchLanguage": "切换语言",
 		"switchOrganization": "切换组织",
 		"switchOrganizationConfirm": "切换后页面将自动刷新，是否继续？",
@@ -1306,7 +1316,8 @@
 		"workflow": "工作流",
 		"workspace": "工作台",
 		"accountManagement": "账号管理",
-		"deviceManagement": "设备管理"
+		"deviceManagement": "设备管理",
+		"admin": "管理后台"
 	},
 	"spin": {
 		"loadingUserInfo": "正在加载用户信息...",

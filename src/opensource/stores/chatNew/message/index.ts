@@ -100,6 +100,10 @@ class MessageStore {
 		this.updateMessageSeenStatus(message.message_id || message?.temp_id || "", seen_status)
 		this.updateMessageId(message.message_id || message?.temp_id || "", message.message_id)
 		this.lastSeqId = message.seq_id || this.lastSeqId
+
+		if (this.messages.length === 1) {
+			this.firstSeqId = message.seq_id || ""
+		}
 	}
 
 	/**
@@ -117,7 +121,7 @@ class MessageStore {
 		// temp_id 为空，可能是控制消息
 		if (message.temp_id && messageIndex !== -1) {
 			console.log("replace local send message ====> ", message)
-			this.messages.splice(messageIndex, 1, message)
+			this.messages.splice(messageIndex, 1, { ...message })
 			this.updateMessageSeenStatus(message?.temp_id || "", message.seen_status)
 			this.updateMessageSeenStatus(message?.message_id || "", message.seen_status)
 		} else {
@@ -126,6 +130,10 @@ class MessageStore {
 			this.messages.push(message)
 		}
 		this.lastSeqId = message.seq_id || this.lastSeqId
+
+		if (this.messages.length === 1) {
+			this.firstSeqId = message.seq_id || ""
+		}
 	}
 
 	updateMessageSendStatus(id: string, status: SendStatus) {
