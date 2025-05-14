@@ -9,7 +9,7 @@ FROM ${NODE_IMAGE} as builder
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
+COPY package.json ./
 
 RUN npm install pnpm --location=global && \
     # 安装 patch-package 是为了使 @feb/formily 能够正常装包
@@ -34,7 +34,7 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server ./server
 
-COPY server/package.json server/package-lock.json ./
+COPY server/package.json ./
 
 RUN npm install && \
     # 移除 node 构建产生的临时文件
