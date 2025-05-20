@@ -32,7 +32,7 @@ export const useStyles = createStyles(
 			subSider: {},
 			content: css`
 				width: calc(100% - var(--sider-width));
-				height: calc(100% - 44px);
+				height: 100%;
 			`,
 		}
 	},
