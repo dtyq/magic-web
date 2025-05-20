@@ -8,8 +8,7 @@ import { IconX, IconEdit } from "@tabler/icons-react"
 import { memo, useEffect, useMemo } from "react"
 import MagicAvatar from "@/opensource/components/base/MagicAvatar"
 import { useTranslation } from "react-i18next"
-import type { FlowTool } from "@/types/flow"
-import { FlowRouteType } from "@/types/flow"
+import { Flow, FlowTool, FlowRouteType } from "@/types/flow"
 import FlowEmptyImage from "@/assets/logos/empty-flow.png"
 import ToolsEmptyImage from "@/assets/logos/empty-tools.svg"
 import KeyManagerButton from "@/opensource/pages/flow/components/KeyManager/KeyManagerButton"
@@ -21,12 +20,14 @@ import {
 	hasViewRight,
 	ResourceTypes,
 } from "@/opensource/pages/flow/components/AuthControlButton/types"
-import defaultFlowAvatar from "@/assets/logos/flow-avatar.png"
-import defaultToolAvatar from "@/assets/logos/tool-avatar.png"
 import useStyles from "./style"
 import BindOpenApiAccount from "../BindOpenApiAccount"
 import ToolCard from "../ToolCard"
 import type { FlowWithTools } from "../../hooks/useFlowList"
+import { defaultAvatarMap, flowTypeToApiKeyType } from "../../constants"
+import ToolImportButton from "./components/ToolImportButton"
+import { EventEmitter } from "ahooks/lib/useEventEmitter"
+import { pick } from "lodash-es"
 
 export type DataType = MagicFlow.Flow & {
 	icon?: string
@@ -35,13 +36,13 @@ export type DataType = MagicFlow.Flow & {
 
 export type DrawerItem = {
 	id?: string
-	title: string
-	desc: string
+	title?: string
+	desc?: string
 	type?: string
 	enabled?: boolean
 	required?: boolean
 	more?: boolean
-	rawData?: FlowTool.Tool
+	rawData?: FlowTool.Tool | Flow.Mcp.ListItem
 }
 
 type RightDrawerProps = {
@@ -51,8 +52,12 @@ type RightDrawerProps = {
 	openAddOrUpdateFlow: () => void
 	goToFlow: (id: string) => void
 	onClose: () => void
-	setToolSetId: React.Dispatch<React.SetStateAction<string>>
-	getDropdownItems: (tool: FlowTool.Tool, flow: MagicFlow.Flow) => React.ReactNode
+	setGroupId: React.Dispatch<React.SetStateAction<string>>
+	getDropdownItems: (
+		tool: FlowTool.Tool | Flow.Mcp.ListItem,
+		flow: MagicFlow.Flow,
+	) => React.ReactNode
+	mcpEventListener?: EventEmitter<string>
 }
 
 function RightDrawer({
@@ -61,9 +66,10 @@ function RightDrawer({
 	flowType,
 	getDropdownItems,
 	goToFlow,
-	setToolSetId,
+	setGroupId,
 	openAddOrUpdateFlow,
 	onClose,
+	mcpEventListener,
 }: RightDrawerProps) {
 	const { styles } = useStyles({ open })
 
@@ -77,9 +83,27 @@ function RightDrawer({
 		useBoolean(false)
 
 	const isTools = useMemo(() => flowType === FlowRouteType.Tools, [flowType])
+	const isMcp = useMemo(() => flowType === FlowRouteType.Mcp, [flowType])
 
 	const getDrawerItem = useMemoizedFn(async () => {
 		switch (flowType) {
+			case FlowRouteType.Mcp:
+				const mcpTools = await FlowApi.getMcpToolList(data.id as string)
+				if (mcpTools.list.length) {
+					const items = mcpTools.list.map((tool) => {
+						return {
+							id: tool.id,
+							title: tool.name,
+							desc: tool.description,
+							enabled: tool.enabled,
+							more: true,
+							rawData: tool,
+						}
+					})
+					// @ts-ignore
+					setDrawerItems(items)
+				}
+				break
 			case FlowRouteType.Tools:
 				const tools = (data as FlowWithTools)?.tools
 				if (tools?.length) {
@@ -120,6 +144,10 @@ function RightDrawer({
 		}
 	})
 
+	mcpEventListener?.useSubscription?.(() => {
+		getDrawerItem()
+	})
+
 	useEffect(() => {
 		if (open && data) {
 			if (drawerItems.length) resetDrawerItems()
@@ -132,16 +160,18 @@ function RightDrawer({
 	}, [data, open, getDrawerItem, resetDrawerItems])
 
 	const subTitle = useMemo(() => {
-		return isTools
-			? resolveToString(t("flow.hasToolsNum"), {
-					num: (data as FlowWithTools)?.tools?.length || 0,
-			  })
-			: t("flow.flowInput")
-	}, [data, isTools, t])
+		const toolsLength = data?.tools?.length || data?.tools_count
+		if (toolsLength) {
+			return resolveToString(t("flow.hasToolsNum"), {
+				num: toolsLength,
+			})
+		}
+		return t("flow.flowInput")
+	}, [data, t])
 
 	const handleAddTool = useMemoizedFn(() => {
 		if (data?.id) {
-			setToolSetId(data?.id)
+			setGroupId(data?.id)
 			openAddOrUpdateFlow()
 		}
 	})
@@ -165,15 +195,34 @@ function RightDrawer({
 
 	const handlerInnerUpdateEnable = useMemoizedFn(async (e, tool) => {
 		e.stopPropagation()
-		await FlowApi.changeEnableStatus(tool.code)
+		if (isMcp) {
+			const mcpTool = pick(tool, [
+				"id",
+				"source",
+				"name",
+				"description",
+				"icon",
+				"rel_code",
+				"enabled",
+			])
+			await FlowApi.saveMcpTool(
+				{
+					...mcpTool,
+					enabled: !tool.enabled,
+				},
+				data.id as string,
+			)
+		} else {
+			await FlowApi.changeEnableStatus(tool.code)
+		}
 		const text = tool.enabled
-			? globalT("common.enabled", { ns: "flow" })
-			: globalT("common.baned", { ns: "flow" })
+			? globalT("common.baned", { ns: "flow" })
+			: globalT("common.enabled", { ns: "flow" })
 		message.success(`${tool.name} ${text}`)
 
 		tool.enabled = !tool.enabled
 		const newDrawerItems = drawerItems.map((item) => {
-			if (item.id === tool.code) {
+			if (item.id === tool.code || item.id === tool.id) {
 				return {
 					...item,
 					enabled: tool.enabled,
@@ -252,27 +301,73 @@ function RightDrawer({
 				  ]
 				: []),
 		]
-		return isTools ? toolsBtn : flowsBtn
+		const mcpBtns = [
+			...(hasEditRight(data.user_operation)
+				? [
+						<ToolImportButton
+							drawerItems={drawerItems}
+							getDrawerItem={getDrawerItem}
+							data={data}
+							key="import-tools"
+						/>,
+						<MagicButton
+							key="api-key"
+							type="text"
+							className={styles.button}
+							onClick={openKeyManager}
+						>
+							API Key
+						</MagicButton>,
+						<AuthControlButton
+							key="auth-control-flow"
+							className={styles.button}
+							resourceType={ResourceTypes.Mcp}
+							resourceId={data?.id ?? ""}
+						/>,
+				  ]
+				: []),
+		]
+		if (isMcp) return mcpBtns
+		if (isTools) return toolsBtn
+		return flowsBtn
 	}, [
-		data?.id,
-		data.user_operation,
+		data,
+		drawerItems,
 		goToFlow,
 		handleAddTool,
+		isMcp,
 		isTools,
 		openKeyManager,
 		styles.button,
 		t,
+		getDrawerItem,
 	])
 
 	const defaultAvatar = useMemo(() => {
 		return (
 			<img
-				src={isTools ? defaultToolAvatar : defaultFlowAvatar}
+				src={defaultAvatarMap[flowType]}
 				style={{ width: "50px", borderRadius: 8 }}
 				alt=""
 			/>
 		)
-	}, [isTools])
+	}, [flowType])
+
+	const emptyTips = useMemo(() => {
+		const emptyTipsMap = {
+			[FlowRouteType.Tools]: t("flow.emptyTips", {
+				title: t("common.tools", { ns: "flow" }),
+			}),
+			[FlowRouteType.Sub]: t("flow.emptyTips", {
+				title: t("common.noArguments"),
+			}),
+			[FlowRouteType.Mcp]: t("flow.emptyTips", {
+				title: t("common.tools", { ns: "flow" }),
+			}),
+		}
+		// @ts-ignore
+		return emptyTipsMap[flowType]
+	}, [flowType, t])
 
 	return (
 		<Flex vertical gap={10} className={styles.container}>
@@ -319,11 +414,7 @@ function RightDrawer({
 							size={140}
 						/>
 					</Flex>
-					<div className={styles.emptyTips}>
-						{isTools
-							? resolveToString(t("flow.emptyTips"), { title: t("flow.tools") })
-							: resolveToString(t("flow.emptyTips"), { title: t("flow.flow") })}
-					</div>
+					<div className={styles.emptyTips}>{emptyTips}</div>
 				</Flex>
 			)}
 			{drawerItems.length !== 0 && (
@@ -340,6 +431,7 @@ function RightDrawer({
 								hasEditRight={hasEditRight}
 								handlerInnerUpdateEnable={handlerInnerUpdateEnable}
 								getDropdownItems={getDropdownItems}
+								flowType={flowType}
 							/>
 						))}
 					</Flex>
@@ -355,6 +447,7 @@ function RightDrawer({
 				onClose={closeKeyManager}
 				flowId={data.id!}
 				isAgent={false}
+				type={flowTypeToApiKeyType[flowType]}
 			/>
 		</Flex>
 	)

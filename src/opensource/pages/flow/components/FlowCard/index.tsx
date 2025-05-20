@@ -70,7 +70,9 @@ function Card({
 	const tagRender = useMemo(() => {
 		let quote = 0
 		let tools = 0
+		const hasTools = flowType === FlowRouteType.Tools || flowType === FlowRouteType.Mcp
 		switch (flowType) {
+			case FlowRouteType.Mcp:
 			case FlowRouteType.Tools:
 				quote = (data as Flow).agent_used_count ? (data as Flow).agent_used_count! : 0
 				tools = (data as Flow).tools ? (data as Flow).tools!.length : 0
@@ -99,7 +101,7 @@ function Card({
 						},
 				  ]
 
-		return flowType === FlowRouteType.Tools
+		return hasTools
 			? [
 					{
 						key: "tool",

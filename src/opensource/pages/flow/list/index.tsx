@@ -48,8 +48,8 @@ function FlowListPage() {
 		loading,
 		flowList,
 		title,
-		toolSetId,
-		setToolSetId,
+		groupId,
+		setGroupId,
 		currentFlow,
 		currentTool,
 		updateFlowOrTool,
@@ -64,6 +64,7 @@ function FlowListPage() {
 		loadMoreData,
 		hasMore,
 		total,
+		mcpEventListener,
 	} = useFlowList({
 		flowType,
 	})
@@ -131,8 +132,7 @@ function FlowListPage() {
 							type="primary"
 							onClick={createHandler}
 						>
-							{t("button.create")}
-							{title}
+							{t("common.createSomething", { ns: "flow", name: title })}
 						</MagicButton>
 					</Flex>
 				</Flex>
@@ -172,8 +172,7 @@ function FlowListPage() {
 
 								{flowList.length === 0 && (
 									<MagicButton type="primary" onClick={createHandler}>
-										{t("button.create")}
-										{title}
+										{t("common.createSomething", { ns: "flow", name: title })}
 									</MagicButton>
 								)}
 							</Flex>
@@ -240,15 +239,16 @@ function FlowListPage() {
 					data={currentFlow}
 					goToFlow={goToFlow}
 					flowType={flowType}
-					setToolSetId={setToolSetId}
+					setGroupId={setGroupId}
 					getDropdownItems={getRightPanelDropdownItems}
+					mcpEventListener={mcpEventListener}
 				/>
 			)}
 			{flowType !== FlowRouteType.VectorKnowledge && (
 				<AddOrUpdateFlow
 					flow={currentFlow}
 					tool={currentTool}
-					toolSetId={toolSetId}
+					groupId={groupId}
 					open={addOrUpdateFlowOpen}
 					onClose={handleCloseAddOrUpdateFlow}
 					updateFlowOrTool={updateFlowOrTool}
