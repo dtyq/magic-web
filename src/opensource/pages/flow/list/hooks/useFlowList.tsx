@@ -233,6 +233,9 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 	})
 
 	const checkIsLatestMcpTool = useMemoizedFn((tool: Flow.Mcp.ListItem) => {
+		if (!tool.version || !tool?.source_version?.latest_version_name) {
+			return true
+		}
 		return tool.source_version?.latest_version_code === tool.rel_version_code
 	})
 
