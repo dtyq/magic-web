@@ -272,6 +272,26 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 						break
 				}
 				if (isMcp) {
+					mutate((currentData: CurrentDataType) => {
+						return currentData?.map((page) => ({
+							...page,
+							list: page?.list.map((item: Flow.Mcp.Detail) => {
+								if (item.id === flow.mcp_server_code) {
+									return {
+										...item,
+										tools_count: item.tools_count - 1,
+									}
+								}
+								return item
+							}),
+						}))
+					}, false)
+					setCurrentFlow((prev) => {
+						return {
+							...prev,
+							tools_count: (prev as Flow.Mcp.Detail).tools_count - 1,
+						}
+					})
 					mcpEventListener.emit("updateMcpList")
 				}
 				// 更新工具列表
@@ -597,20 +617,22 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 		},
 	)
 
-	const handleCardClick = useMemoizedFn((flow: MagicFlow.Flow | Knowledge.KnowledgeItem) => {
-		// 点击向量知识库直接跳转详情
+	const handleCardClick = useMemoizedFn(
+		(flow: MagicFlow.Flow | Knowledge.KnowledgeItem | Flow.Mcp.Detail) => {
+			// 点击向量知识库直接跳转详情
 		if (flowType === FlowRouteType.VectorKnowledge && flow.code) {
 			return goToKnowledgeDetail(flow.code)
 		}
 		const checked = currentFlow?.id === flow.id
-		if (checked) {
-			resetCurrentFlow()
-			closeExpandPanel()
-		} else {
-			setCurrentFlow(flow)
-			openExpandPanel()
-		}
-	})
+			if (checked) {
+				resetCurrentFlow()
+				closeExpandPanel()
+			} else {
+				setCurrentFlow(flow)
+				openExpandPanel()
+			}
+		},
+	)
 
 	const handleCloseAddOrUpdateFlow = useMemoizedFn(() => {
 		closeAddOrUpdateFlow()

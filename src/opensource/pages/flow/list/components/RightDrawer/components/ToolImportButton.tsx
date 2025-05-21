@@ -48,10 +48,12 @@ export default function ToolImportButton({
 	drawerItems,
 	data,
 	getDrawerItem,
+	setCurrentFlow,
 }: {
 	drawerItems: DrawerItem[]
 	data: DataType
 	getDrawerItem: () => void
+	setCurrentFlow: (flow: DataType) => void
 }) {
 	const [form] = Form.useForm()
 	const { styles } = useStyles()
@@ -95,6 +97,12 @@ export default function ToolImportButton({
 			}
 			form.setFieldsValue(newValues)
 			getDrawerItem()
+			setCurrentFlow((prev) => {
+				return {
+					...prev,
+					tools_count: (prev as Flow.Mcp.Detail).tools_count + 1,
+				}
+			})
 		}
 	})
 

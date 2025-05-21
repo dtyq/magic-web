@@ -28,11 +28,8 @@ import { defaultAvatarMap, flowTypeToApiKeyType } from "../../constants"
 import ToolImportButton from "./components/ToolImportButton"
 import { EventEmitter } from "ahooks/lib/useEventEmitter"
 import { pick } from "lodash-es"
-
-export type DataType = MagicFlow.Flow & {
-	icon?: string
-	tools?: FlowTool.Tool[]
-}
+import { Knowledge } from "@/types/knowledge"
+export type DataType = MagicFlow.Flow | Knowledge.KnowledgeItem | Flow.Mcp.Detail
 
 export type DrawerItem = {
 	id?: string
@@ -58,6 +55,8 @@ type RightDrawerProps = {
 		flow: MagicFlow.Flow,
 	) => React.ReactNode
 	mcpEventListener?: EventEmitter<string>
+	setCurrentFlow: (flow: DataType) => void
+	mutate: (data: any) => void
 }
 
 function RightDrawer({
@@ -70,6 +69,8 @@ function RightDrawer({
 	openAddOrUpdateFlow,
 	onClose,
 	mcpEventListener,
+	setCurrentFlow,
+	mutate,
 }: RightDrawerProps) {
 	const { styles } = useStyles({ open })
 
@@ -102,6 +103,20 @@ function RightDrawer({
 					})
 					// @ts-ignore
 					setDrawerItems(items)
+					mutate((currentData: any[]) => {
+						return currentData?.map((page) => ({
+							...page,
+							list: page?.list.map((item: Flow.Mcp.Detail) => {
+								if (item.id === data.id) {
+									return {
+										...item,
+										tools_count: mcpTools.list.length,
+									}
+								}
+								return item
+							}),
+						}))
+					})
 				}
 				break
 			case FlowRouteType.Tools:
@@ -160,7 +175,8 @@ function RightDrawer({
 	}, [data, open, getDrawerItem, resetDrawerItems])
 
 	const subTitle = useMemo(() => {
-		const toolsLength = data?.tools?.length || data?.tools_count
+		const toolsLength =
+			(data as FlowWithTools)?.tools?.length || (data as Flow.Mcp.Detail)?.tools_count
 		if (toolsLength) {
 			return resolveToString(t("flow.hasToolsNum"), {
 				num: toolsLength,
@@ -309,6 +325,7 @@ function RightDrawer({
 							getDrawerItem={getDrawerItem}
 							data={data}
 							key="import-tools"
+							setCurrentFlow={setCurrentFlow}
 						/>,
 						<MagicButton
 							key="api-key"

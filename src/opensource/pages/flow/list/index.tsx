@@ -1,7 +1,7 @@
 import MagicSpin from "@/opensource/components/base/MagicSpin"
 import { Avatar, Flex, Input, List, Select } from "antd"
 import { useEffect, useMemo, useState } from "react"
-import { FlowRouteType, VectorKnowledge } from "@/types/flow"
+import { Flow, FlowRouteType, VectorKnowledge } from "@/types/flow"
 import { useLocation, useParams } from "react-router"
 import { useNavigate } from "@/opensource/hooks/useNavigate"
 import FlowEmptyImage from "@/assets/logos/empty-flow.png"
@@ -51,6 +51,7 @@ function FlowListPage() {
 		groupId,
 		setGroupId,
 		currentFlow,
+		setCurrentFlow,
 		currentTool,
 		updateFlowOrTool,
 		expandPanelOpen,
@@ -208,7 +209,10 @@ function FlowListPage() {
 									dataSource={flowList}
 									loading={loading}
 									renderItem={(
-										item: MagicFlow.Flow | Knowledge.KnowledgeItem,
+										item:
+											| MagicFlow.Flow
+											| Knowledge.KnowledgeItem
+											| Flow.Mcp.Detail,
 									) => {
 										const dropdownItems = getDropdownItems(item)
 										return (
@@ -242,6 +246,8 @@ function FlowListPage() {
 					setGroupId={setGroupId}
 					getDropdownItems={getRightPanelDropdownItems}
 					mcpEventListener={mcpEventListener}
+					setCurrentFlow={setCurrentFlow}
+					mutate={mutate}
 				/>
 			)}
 			{flowType !== FlowRouteType.VectorKnowledge && (

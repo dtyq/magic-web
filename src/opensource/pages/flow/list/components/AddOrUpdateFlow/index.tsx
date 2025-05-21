@@ -27,7 +27,7 @@ type AddOrUpdateFlowProps = {
 	flowType: FlowRouteType
 	title: string
 	open: boolean
-	flow?: MagicFlow.Flow | Knowledge.KnowledgeItem
+	flow?: MagicFlow.Flow | Knowledge.KnowledgeItem | Flow.Mcp.Detail
 	tool?: FlowTool.Tool | Flow.Mcp.ListItem
 	groupId?: string
 	onClose: () => void
