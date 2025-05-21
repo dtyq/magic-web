@@ -8,6 +8,9 @@ export default function MCPDesc({ item }: { item: Flow.Mcp.Detail }) {
 	const { t } = useTranslation()
 
 	const isLatest = useMemo(() => {
+		if (!item.version || !item?.source_version?.latest_version_name) {
+			return true
+		}
 		return item.version === item?.source_version?.latest_version_name
 	}, [item])
 
