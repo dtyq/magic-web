@@ -220,7 +220,7 @@ export default function KeyManagerButton({
 	})
 
 	const copySSEURL = useMemoizedFn((key: ApiKey) => {
-		const sseURL = `${env("MAGIC_SERVICE_BASE_URL")}/api/v1/mcp/sse/${flowId}/${key.id}`
+		const sseURL = `${env("MAGIC_SERVICE_BASE_URL")}/api/v1/mcp/sse/${flowId}/${key.secret_key}`
 		copyToClipboard(sseURL)
 		message.success(`${globalT("mcp.copySSEURLSuccess", { ns: "flow" })}`)
 	})
