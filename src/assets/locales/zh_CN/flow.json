@@ -381,7 +381,10 @@
         "inputDesc": "{{name}}描述",
         "inputDescPlaceholder": "请输入{{name}}描述",
         "inputNamePlaceholder": "请输入{{name}}名称",
-        "noArguments": "暂未添加任何参数"
+        "noArguments": "暂未添加任何参数",
+        "deleteSomething": "删除{{name}}",
+        "editSomething": "编辑{{name}}",
+        "modifySomething": "修改{{name}}"
 	},
 	"knowledgeDatabase": {
 		"name": "知识库",
@@ -880,7 +883,7 @@
         "commandCompleted": "指令执行完成"
 	},
     "mcp": {
-		"name": "MCP 服务",
+		"name": " MCP 服务",
 		"importTools": "导入工具",
 		"currentVersion": "当前版本: {{version}}",
 		"latestVersion": "最新版本: {{version}}",
@@ -888,6 +891,7 @@
 		"confirmToUpdateVersion": "确定更新版本吗？",
 		"updateVersionSuccess": "更新版本成功",
 		"copySSEURL": "复制 SSE 地址",
-        "copySSEURLSuccess": "复制 SSE 地址成功"
+        "copySSEURLSuccess": "复制 SSE 地址成功",
+        "modifyMcp": "修改 MCP 信息"
 	}
 }

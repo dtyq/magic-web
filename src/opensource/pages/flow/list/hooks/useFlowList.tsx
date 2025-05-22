@@ -179,7 +179,7 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 			[FlowRouteType.Sub]: globalT("common.flow", { ns: "flow" }),
 			[FlowRouteType.Tools]: globalT("common.toolset", { ns: "flow" }),
 			[FlowRouteType.VectorKnowledge]: globalT("common.knowledgeDatabase", { ns: "flow" }),
-			[FlowRouteType.Mcp]: "MCP",
+			[FlowRouteType.Mcp]: globalT("mcp.name", { ns: "flow" }),
 		}
 		return map[flowType]
 	}, [flowType, globalT])
@@ -274,7 +274,8 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 					default:
 						break
 				}
-				if (isMcp) {
+				// 删除的是MCP的工具时
+				if (isMcp && tool) {
 					mutate((currentData: CurrentDataType) => {
 						return currentData?.map((page) => ({
 							...page,
@@ -523,7 +524,7 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 								openAddOrUpdateFlow()
 							}}
 						>
-							{t("flow.changeInfo")}
+							{changeInfoTitle}
 						</MagicButton>
 					)}
 					{hasAdminRight(flow.user_operation) && (
@@ -538,14 +539,18 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 							danger
 							onClick={() => deleteFlow(flow)}
 						>
-							{t("chat.delete")}
-							{title}
+							{globalT("common.deleteSomething", { ns: "flow", name: title })}
 						</MagicButton>
 					)}
 				</>
 			)
 		},
 	)
+
+	const changeInfoTitle = useMemo(() => {
+		if (isMcp) return globalT("mcp.modifyMcp", { ns: "flow" })
+		return t("flow.changeInfo")
+	}, [isMcp, globalT, t])
 
 	const getRightPanelDropdownItems = useMemoizedFn(
 		(tool: FlowTool.Tool | Flow.Mcp.ListItem, flow: MagicFlow.Flow) => {
@@ -585,8 +590,10 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 							openAddOrUpdateFlow()
 						}}
 					>
-						{t("button.edit")}
-						{t("flow.tools")}
+						{globalT("common.editSomething", {
+							ns: "flow",
+							name: t("flow.tools"),
+						})}
 					</MagicButton>
 					{/* <MagicButton
 						justify="flex-start"
@@ -611,8 +618,10 @@ export default function useFlowList({ flowType }: FlowListHooksProps) {
 							danger
 							onClick={() => deleteFlow(tool, true)}
 						>
-							{t("chat.delete")}
-							{t("flow.tools")}
+							{globalT("common.deleteSomething", {
+								ns: "flow",
+								name: t("flow.tools"),
+							})}
 						</MagicButton>
 					)}
 				</>

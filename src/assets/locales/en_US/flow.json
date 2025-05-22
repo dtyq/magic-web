@@ -381,7 +381,10 @@
 		"inputDesc": "{{name}} Description",
 		"inputDescPlaceholder": "Enter {{name}} Description",
 		"inputNamePlaceholder": "Enter {{name}} Name",
-		"noArguments": "No arguments"
+		"noArguments": "No arguments",
+        "deleteSomething": "Delete {{name}}",
+        "editSomething": "Edit {{name}}",
+        "modifySomething": "Modify {{name}}"
 	},
 	"knowledgeDatabase": {
 		"name": "Knowledge Base",
@@ -885,6 +888,7 @@
 		"confirmToUpdateVersion": "Are you sure you want to update the version?",
 		"updateVersionSuccess": "Update version successfully",
 		"copySSEURL": "Copy SSE URL",
-        "copySSEURLSuccess": "Copy SSE URL successfully"
+        "copySSEURLSuccess": "Copy SSE URL successfully",
+        "modifyMcp": "Modify MCP"
 	}
 }
