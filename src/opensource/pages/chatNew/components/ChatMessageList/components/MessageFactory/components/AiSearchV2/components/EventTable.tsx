@@ -42,7 +42,7 @@ const useStyles = createStyles(({ css, token }) => ({
 	`,
 }))
 
-const EventTable = memo(({ events }: { events: AggregateAISearchCardEvent[] }) => {
+const EventTable = memo(({ events = [] }: { events?: AggregateAISearchCardEvent[] }) => {
 	const { t } = useTranslation("interface")
 	const { styles } = useStyles()
 
