@@ -10,7 +10,6 @@ import { makeObservable, observable, toJS } from "mobx"
 import MessageService from "../../MessageService"
 import StreamMessageApplyServiceV2 from "../StreamMessageApplyServiceV2"
 import { bigNumCompare } from "@/utils/string"
-import StreamMessageApplyService from "../StreamMessageApplyService"
 
 interface RelationInfo {
 	message_id: string
@@ -129,7 +128,7 @@ class AiSearchApplyService {
 		if (!this.getTempMessageContent(message.message.app_message_id)) {
 			MessageService.addReceivedMessage(this.generateMessage(message))
 			// 记录应用消息ID与实际消息ID的关系
-			StreamMessageApplyService.recordMessageInfo(message)
+			StreamMessageApplyServiceV2.recordMessageInfo(message)
 		} else {
 			const messageInfo = StreamMessageApplyServiceV2.queryMessageInfo(
 				message.message.app_message_id,
