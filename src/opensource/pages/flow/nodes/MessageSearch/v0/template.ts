@@ -34,7 +34,7 @@ export const v0Template = {
 						type: "array",
 						key: "history_messages",
 						sort: 0,
-						title: i18next.t("common.historyMessages", { ns: "flow" }),
+						title: "历史消息",
 						description: "",
 						required: null,
 						value: null,
