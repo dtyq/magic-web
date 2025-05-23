@@ -1,3 +1,5 @@
+import i18next from "i18next"
+
 export const v0Template = {
 	node_id: "MAGIC-FLOW-NODE-671a09090ab463-93507489",
 	debug: false,
@@ -32,7 +34,7 @@ export const v0Template = {
 						type: "array",
 						key: "history_messages",
 						sort: 0,
-						title: "历史消息",
+						title: i18next.t("common.historyMessages", { ns: "flow" }),
 						description: "",
 						required: null,
 						value: null,

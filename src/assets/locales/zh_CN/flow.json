@@ -375,6 +375,8 @@
 		"fileSizeLimit": "每个文件不超过{{size}}",
 		"fileDragTip": "将文件拖至此处或点击选择文件",
 		"uploadFile": "上传文件",
+		"startTime": "开始时间",
+		"endTime": "结束时间",
 		"createSomething": "创建 {{name}}",
 		"updateSomething": "更新 {{name}}",
         "inputName": "{{name}}名称",

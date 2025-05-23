@@ -375,6 +375,8 @@
 		"fileSizeLimit": "Each file cannot exceed {{size}}",
 		"fileDragTip": "Drag files here or click to select files",
 		"uploadFile": "Upload File",
+		"startTime": "Start Time",
+		"endTime": "End Time",
 		"createSomething": "Create {{name}}",
 		"updateSomething": "Update {{name}}",
         "inputName": "{{name}} Name",
