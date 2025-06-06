@@ -486,7 +486,11 @@ const ChatMessageList = observer(() => {
 			onClick={handleContainerClick}
 			onContextMenu={handleContainerContextMenu}
 		>
-			{state.isLoadingMore && <div className={styles.loadingMore}>加载更多消息...</div>}
+			{state.isLoadingMore && (
+				<div className={styles.loadingMore}>
+					{t("message.chat.loadingMoreMessages", { ns: "interface" })}
+				</div>
+			)}
 			<div
 				ref={wrapperRef}
 				className={cx(styles.wrapper)}
@@ -504,7 +508,9 @@ const ChatMessageList = observer(() => {
 					{/* 会话切换时显示加载状态，防止消息串台 */}
 					{state.isConversationSwitching ? (
 						<div className={styles.conversationSwitching}>
-							<div>切换会话中...</div>
+							<div>
+								{t("message.chat.switchingConversation", { ns: "interface" })}
+							</div>
 						</div>
 					) : (
 						MessageStore.messages
