@@ -1,9 +1,8 @@
 import { RoutePath } from "@/const/routes"
 import { userStore } from "@/opensource/models/user"
-import { LoginValueKey } from "@/pages/login/constants"
+import { LoginValueKey } from "@/opensource/pages/login/constants"
 import { userService } from "@/services"
 import { User } from "@/types/user"
-import { getHomeURL } from "@/utils/redirect"
 import { cloneDeep } from "lodash-es"
 
 const UserDispatchService = {
@@ -55,9 +54,7 @@ const UserDispatchService = {
 			if (redirectURI) {
 				window.location.assign(decodeURIComponent(redirectURI))
 			} else {
-				getHomeURL().then((url) => {
-					window.location.assign(url)
-				})
+				window.location.assign(RoutePath.Chat)
 			}
 		} else {
 			// 内存状态同步

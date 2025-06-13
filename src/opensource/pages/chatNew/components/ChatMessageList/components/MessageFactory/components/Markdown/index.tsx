@@ -1,4 +1,4 @@
-import { type HTMLAttributes } from "react"
+import { memo, type HTMLAttributes } from "react"
 import { createStyles } from "antd-style"
 import ReasoningContent from "./ReasoningContent"
 import streamLoadingIcon from "@/assets/resources/stream-loading-2.png"
