@@ -10,7 +10,7 @@ import MessageDropdownService from "@/opensource/services/chat/message/MessageDr
 import MessageDropdownStore from "@/opensource/stores/chatNew/messageUI/Dropdown"
 import MagicIcon from "@/opensource/components/base/MagicIcon"
 import { useTranslation } from "react-i18next"
-import { autorun } from "mobx"
+import { autorun, toJS } from "mobx"
 import { cx } from "antd-style"
 import { DomClassName } from "@/const/dom"
 import { debounce, throttle } from "lodash-es"
@@ -516,7 +516,10 @@ const ChatMessageList = observer(() => {
 						MessageStore.messages
 							.filter((message) => {
 								// 过滤消息，确保只显示当前会话的消息
-								return message.conversation_id === MessageStore.conversationId
+								return (
+									message.conversation_id === MessageStore.conversationId &&
+									message.message.topic_id === MessageStore.topicId
+								)
 							})
 							.map((message) => {
 								// 使用复合key防止不同会话间的组件复用
