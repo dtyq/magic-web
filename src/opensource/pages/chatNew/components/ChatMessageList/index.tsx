@@ -23,6 +23,7 @@ import GroupSeenPanelStore, {
 } from "@/opensource/stores/chatNew/groupSeenPanel"
 import { isMessageInView } from "./utils"
 import MessageRender from "./components/MessageRender"
+import { safeBtoaToJson } from "@/utils/encoding"
 
 let canScroll = true
 let isScrolling = false
@@ -445,13 +446,16 @@ const ChatMessageList = observer(() => {
 			const fileInfo = target.getAttribute("data-file-info")
 			if (fileInfo) {
 				try {
-					const fileInfoObj = JSON.parse(atob(fileInfo))
-					// 如果是同一张图片，先重置状态
-					MessageImagePreview.setPreviewInfo({
-						...fileInfoObj,
-						messageId,
-						conversationId: conversationStore.currentConversation?.id,
-					})
+					const fileInfoObj = safeBtoaToJson(fileInfo)
+					if (fileInfoObj) {
+						console.log("fileInfoObj ====> ", fileInfoObj)
+						// 如果是同一张图片，先重置状态
+						MessageImagePreview.setPreviewInfo({
+							...fileInfoObj,
+							messageId,
+							conversationId: conversationStore.currentConversation?.id,
+						})
+					}
 				} catch (error) {
 					console.error("解析文件信息失败", error)
 				}

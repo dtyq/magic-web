@@ -131,7 +131,11 @@ const MentionSelect = observer(
 		return (
 			<Popover
 				autoAdjustOverflow
-				overlayInnerStyle={{ padding: 0 }}
+				styles={{
+					body: {
+						padding: 0,
+					},
+				}}
 				content={
 					<Flex vertical>
 						<MagicSearch

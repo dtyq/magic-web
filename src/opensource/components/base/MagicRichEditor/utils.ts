@@ -4,6 +4,7 @@ import type { Editor } from "@tiptap/react"
 import { MAX_RECURSION_DEPTH } from "@/const/other"
 import { isArray, isObject } from "lodash-es"
 import { richTextNode } from "@/opensource/pages/chatNew/components/ChatMessageList/components/MessageFactory/components/RichText/schemaConfig"
+import { isValidBase64 } from "@/utils/encoding"
 
 /**
  * 递归遍历所有节点，获取所有节点的类型
@@ -229,17 +230,13 @@ const isBase64 = (str: string): boolean => {
 	if (str.startsWith("data:")) {
 		const matches = str.match(/^data:[^;]+;base64,(.+)$/)
 		if (matches && matches[1]) {
-			;[str] = matches
+			return isValidBase64(matches[1])
 		} else {
 			return false
 		}
 	}
 
-	try {
-		return btoa(atob(str)) === str
-	} catch {
-		return false
-	}
+	return isValidBase64(str)
 }
 
 export const filterFiles = <T extends FileInput>(
