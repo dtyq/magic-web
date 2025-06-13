@@ -88,8 +88,6 @@ const EnhanceMarkdown = memo(
 			[isStreaming, typing, typedContent, content, preprocess],
 		)
 
-		console.log("blocks", blocks)
-
 		// 如果没有内容则不渲染
 		if (blocks.length === 0) return null
 

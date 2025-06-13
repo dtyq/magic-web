@@ -448,7 +448,6 @@ const ChatMessageList = observer(() => {
 				try {
 					const fileInfoObj = safeBtoaToJson(fileInfo)
 					if (fileInfoObj) {
-						console.log("fileInfoObj ====> ", fileInfoObj)
 						// 如果是同一张图片，先重置状态
 						MessageImagePreview.setPreviewInfo({
 							...fileInfoObj,

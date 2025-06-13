@@ -11,7 +11,7 @@ import { CodeRenderProps } from "../../types"
 import { memo } from "react"
 
 interface MermaidProps extends MagicMermaidProps, CodeRenderProps {
-	language: string
+	language?: string
 }
 
 const Mermaid = memo((props: MermaidProps) => {

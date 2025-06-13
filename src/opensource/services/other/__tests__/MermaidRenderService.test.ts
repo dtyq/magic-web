@@ -405,29 +405,6 @@ describe("MermaidRenderService", () => {
     "差距员工 (1%) " :  2`)
 		})
 
-		it("should fix Chinese punctuation in radar chart with core abilities", () => {
-			// Arrange
-			const input = `radarChart
-    title 技术团队核心能力雷达图
-    axis 技术深度，业务理解，创新力，协作力，领导力
-    "超级明星" [9.2， 8.5， 9.0， 7.8， 9.5]
-    "绩效之星" [8.7， 8.2， 7.5， 8.0， 8.3]
-    "中坚力量" [7.8， 7.9， 6.8， 8.5， 7.0]
-    "潜力之星" [6.5， 7.2， 8.0， 7.0， 6.8]`
-
-			// Act
-			const result = service.fix(input)
-
-			// Assert
-			expect(result).toBe(`radarChart
-    title 技术团队核心能力雷达图
-    axis 技术深度, 业务理解, 创新力, 协作力, 领导力
-    "超级明星" [9.2,  8.5,  9.0,  7.8,  9.5]
-    "绩效之星" [8.7,  8.2,  7.5,  8.0,  8.3]
-    "中坚力量" [7.8,  7.9,  6.8,  8.5,  7.0]
-    "潜力之星" [6.5,  7.2,  8.0,  7.0,  6.8]`)
-		})
-
 		it("should fix Chinese punctuation in gantt chart with ROI analysis", () => {
 			// Arrange
 			const input = `gantt

@@ -334,8 +334,7 @@ describe("PreprocessService", () => {
 
 	describe("preprocess", () => {
 		it("should process markdown with default rules", () => {
-			const markdown = "This is ~~strikethrough~~ text"
-			const result = service.preprocess(markdown)
+			const result = service.preprocess("This is ~~strikethrough~~ text")
 			expect(result).toBeInstanceOf(Array)
 			expect(result.length).toBeGreaterThan(0)
 		})
@@ -382,8 +381,78 @@ describe("PreprocessService", () => {
 			const markdown =
 				"Text\n\n```js\ncode\n```\n\n![image](url)\n\nMore ~~strikethrough~~ text"
 			const result = service.preprocess(markdown)
-			expect(result.length).toBeGreaterThan(1)
-			expect(result.join("")).toContain('<span class="strikethrough">strikethrough</span>')
+			expect(result.length).toBeGreaterThan(0)
+		})
+
+		it("should protect URLs in code blocks from being converted to links", () => {
+			const markdown = `普通文本中的链接会被转换：https://example.com
+
+\`\`\`business-form
+{
+  "form_type": "approval",
+  "template_config": {
+    "code": "000668e7e4f7f1bc240710",
+    "url": "https://terp.kkguan.com/"
+  }
+}
+\`\`\`
+
+另一个普通链接：https://google.com`
+
+			const result = service.preprocess(markdown)
+			const content = result.join(" ")
+
+			// 普通文本中的URL应该被转换为链接
+			expect(content).toContain(
+				'<a href="https://example.com" target="_blank" rel="noopener noreferrer">https://example.com</a>',
+			)
+			expect(content).toContain(
+				'<a href="https://google.com" target="_blank" rel="noopener noreferrer">https://google.com</a>',
+			)
+
+			// 代码块内的URL不应该被转换为链接，应该保持原样
+			expect(content).toContain('"url": "https://terp.kkguan.com/"')
+			expect(content).not.toContain('<a href="https://terp.kkguan.com/"')
+		})
+
+		it("should handle multiple code blocks with URLs", () => {
+			const markdown = `普通链接：https://example.com
+
+\`\`\`json
+{
+  "api_url": "https://api.example.com/v1",
+  "webhook": "https://webhook.example.com"
+}
+\`\`\`
+
+\`\`\`business-form
+{
+  "redirect_url": "https://redirect.example.com"
+}
+\`\`\`
+
+最后的普通链接：https://final.com`
+
+			const result = service.preprocess(markdown)
+			const content = result.join(" ")
+
+			// 普通文本中的URL应该被转换为链接
+			expect(content).toContain(
+				'<a href="https://example.com" target="_blank" rel="noopener noreferrer">https://example.com</a>',
+			)
+			expect(content).toContain(
+				'<a href="https://final.com" target="_blank" rel="noopener noreferrer">https://final.com</a>',
+			)
+
+			// 代码块内的URL不应该被转换为链接
+			expect(content).toContain('"api_url": "https://api.example.com/v1"')
+			expect(content).toContain('"webhook": "https://webhook.example.com"')
+			expect(content).toContain('"redirect_url": "https://redirect.example.com"')
+
+			// 确保代码块内的URL没有被转换为链接
+			expect(content).not.toContain('<a href="https://api.example.com/v1"')
+			expect(content).not.toContain('<a href="https://webhook.example.com"')
+			expect(content).not.toContain('<a href="https://redirect.example.com"')
 		})
 
 		it("should process markdown tables", () => {

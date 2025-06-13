@@ -17,14 +17,13 @@ export const CITATION_REGEX_4 = /\[citation(\d+)\]/g
 export const STRIKETHROUGH_REGEX = /~~(.+?)~~/g
 export const TASK_LIST_REGEX = /^(\s*)-\s+\[(x| )\]\s+(.+)$/gm
 // GFM 表格正则表达式 - 修复版本，能正确匹配markdown表格
-
-export const TABLE_REGEX = /(\|[^\n]*\|)\n(\|[^\n]*\|)\n((?:\|[^\n]*\|\n?)*)/g
+// 第一组：表头行，第二组：分隔符行（主要包含横线），第三组：数据行
+export const TABLE_REGEX =
+	/^\s*(\|[^\n]*\|)\s*\n\s*(\|[\s\-:|\s]*\|)\s*\n((?:\s*\|[^\n]*\|\s*(?:\n|$))*)/gm
 // 链接图片正则表达式 - 匹配 [![alt](img_url)](link_url) 格式
 export const LINKED_IMAGE_REGEX = /\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/g
 // GFM 分割线正则表达式 - 匹配 ---, ***, ___ 格式
 export const HORIZONTAL_RULE_REGEX = /^(?:---+|\*\*\*+|___+)$/gm
-// 自动链接正则表达式 - 匹配 https:// 和 http:// 开头的URL，但排除已在Markdown链接或HTML标签中的
-export const AUTO_LINK_REGEX = /(^|[^<"'(])(https?:\/\/[^\s<>"'()]+)(?!\))/g
 // 脚注引用正则表达式 - 匹配 [^1] 格式
 export const FOOTNOTE_REF_REGEX = /\[\^([^\]]+)\]/g
 // 脚注定义正则表达式 - 匹配 [^1]: 内容 格式
@@ -70,11 +69,6 @@ export const defaultPreprocessRules: PreprocessRule[] = [
 	{
 		regex: HORIZONTAL_RULE_REGEX,
 		replace: () => `<hr />`,
-	},
-	{
-		regex: AUTO_LINK_REGEX,
-		replace: (match, prefix, url) =>
-			`${prefix}<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`,
 	},
 	{
 		regex: STRIKETHROUGH_REGEX,

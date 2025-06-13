@@ -547,11 +547,6 @@ export const useStyles = createStyles(
 				}
 			`,
 			video: css`
-				> div,
-				> p > div {
-					margin-block: calc(var(--${prefixCls}-markdown-margin-multiple) * 0.8em);
-				}
-
 				video {
 					width: 100%;
 					max-width: 500px;

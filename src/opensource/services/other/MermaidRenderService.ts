@@ -78,7 +78,7 @@ class MermaidRenderService {
 
 	/**
 	 * 修复mermaid数据
-	 * @description 修复mermaid数据中的中文符号，将中文符号转换为英文符号
+	 * @description 修复mermaid数据中的中文符号，将中文符号转换为英文符号，但跳过中括号内的内容
 	 * @param data 数据
 	 * @returns 修复后的数据
 	 */
@@ -96,8 +96,8 @@ class MermaidRenderService {
 			"、": " ",
 			"（": " (",
 			"）": ") ",
-			"“": '"',
-			"”": '"',
+			"\u201c": '"',
+			"\u201d": '"',
 			"【": " [",
 			"】": "] ",
 			"°": "度",
@@ -106,14 +106,53 @@ class MermaidRenderService {
 			"-": "-",
 		}
 
-		let result = data
+		// Split text by brackets, preserving the brackets and their content
+		const parts: string[] = []
+		let currentPos = 0
+		let bracketStart = data.indexOf("[", currentPos)
 
-		// Replace Chinese punctuation with English punctuation
-		for (const [chinese, english] of Object.entries(punctuationMap)) {
-			result = result.replace(new RegExp(chinese, "g"), english)
+		while (bracketStart !== -1) {
+			// Add text before bracket
+			if (bracketStart > currentPos) {
+				parts.push(data.substring(currentPos, bracketStart))
+			}
+
+			// Find matching closing bracket
+			const bracketEnd = data.indexOf("]", bracketStart)
+			if (bracketEnd !== -1) {
+				// Add bracket content (including brackets) without modification
+				parts.push(data.substring(bracketStart, bracketEnd + 1))
+				currentPos = bracketEnd + 1
+			} else {
+				// No matching closing bracket found, treat as regular text
+				parts.push(data.substring(bracketStart))
+				break
+			}
+
+			bracketStart = data.indexOf("[", currentPos)
 		}
 
-		return result
+		// Add remaining text after last bracket
+		if (currentPos < data.length) {
+			parts.push(data.substring(currentPos))
+		}
+
+		// Process each part - only modify parts that are not inside brackets
+		const processedParts = parts.map((part) => {
+			// Check if this part is inside brackets (starts with '[' and ends with ']')
+			if (part.startsWith("[") && part.endsWith("]")) {
+				return part // Keep bracket content unchanged
+			}
+
+			// Apply punctuation replacement to non-bracket content
+			let result = part
+			for (const [chinese, english] of Object.entries(punctuationMap)) {
+				result = result.replace(new RegExp(chinese, "g"), english)
+			}
+			return result
+		})
+
+		return processedParts.join("")
 	}
 }
 

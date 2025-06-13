@@ -331,19 +331,64 @@ class PreprocessService {
 	}
 
 	/**
+	 * 保护代码块内容，避免被预处理规则影响
+	 * @param markdown
+	 * @returns { processedMarkdown: string, codeBlockMap: Map<string, string> }
+	 */
+	private protectCodeBlocks(markdown: string): {
+		processedMarkdown: string
+		codeBlockMap: Map<string, string>
+	} {
+		const codeBlockMap = new Map<string, string>()
+		let counter = 0
+
+		// 匹配所有代码块（包括语言标识符）
+		const codeBlockRegex = /```[\s\S]*?```/g
+
+		const processedMarkdown = markdown.replace(codeBlockRegex, (match) => {
+			const placeholder = `__CODE_BLOCK_PLACEHOLDER_${counter}__`
+			codeBlockMap.set(placeholder, match)
+			counter++
+			return placeholder
+		})
+
+		return { processedMarkdown, codeBlockMap }
+	}
+
+	/**
+	 * 恢复被保护的代码块内容
+	 * @param markdown
+	 * @param codeBlockMap
+	 * @returns
+	 */
+	private restoreCodeBlocks(markdown: string, codeBlockMap: Map<string, string>): string {
+		let result = markdown
+
+		for (const [placeholder, originalContent] of codeBlockMap) {
+			result = result.replace(placeholder, originalContent)
+		}
+
+		return result
+	}
+
+	/**
 	 * 预处理 markdown
 	 * @param markdown
 	 * @returns
 	 */
 	preprocess(markdown: string, options?: { enableLatex?: boolean }): string[] {
-		// 首先处理缩写
-		markdown = this.processAbbreviations(markdown)
+		// 首先保护代码块内容
+		const { processedMarkdown: protectedMarkdown, codeBlockMap } =
+			this.protectCodeBlocks(markdown)
+
+		// 处理缩写
+		let processedMarkdown = this.processAbbreviations(protectedMarkdown)
 
 		// 处理参考链接
-		markdown = this.processReferenceLinks(markdown)
+		processedMarkdown = this.processReferenceLinks(processedMarkdown)
 
 		// 处理多级任务列表（在其他规则之前）
-		markdown = this.processNestedTaskLists(markdown)
+		processedMarkdown = this.processNestedTaskLists(processedMarkdown)
 
 		const rules = this.getAllRules()
 
@@ -359,14 +404,17 @@ class PreprocessService {
 		}
 
 		for (const rule of filteredRules) {
-			markdown = markdown.replace(rule.regex, rule.replace)
+			processedMarkdown = processedMarkdown.replace(rule.regex, rule.replace)
 		}
 
 		// 最后修复所有可能的段落开头HTML标签问题
-		markdown = this.fixParagraphInlineHtmlTags(markdown)
+		processedMarkdown = this.fixParagraphInlineHtmlTags(processedMarkdown)
+
+		// 恢复代码块内容
+		const finalMarkdown = this.restoreCodeBlocks(processedMarkdown, codeBlockMap)
 
 		// 分割 Markdown 块级代码块
-		return this.splitBlockCode(markdown)
+		return this.splitBlockCode(finalMarkdown)
 	}
 
 	/**
