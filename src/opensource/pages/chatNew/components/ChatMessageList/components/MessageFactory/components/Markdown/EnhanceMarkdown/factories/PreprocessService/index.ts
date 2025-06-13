@@ -397,6 +397,15 @@ class PreprocessService {
 			(rule) => rule.regex.toString() !== TASK_LIST_REGEX.toString(),
 		)
 
+		// 在表格处理之前，先保护表格中的美元符号（如果启用 LaTeX）
+		let tableProtectionMap = new Map<string, string>()
+		if (options?.enableLatex) {
+			const { markdown: protectedTableMarkdown, protectionMap } =
+				this.protectTableDollarSigns(processedMarkdown)
+			processedMarkdown = protectedTableMarkdown
+			tableProtectionMap = protectionMap
+		}
+
 		if (options?.enableLatex) {
 			// 块级公式必须在行内公式之前处理
 			filteredRules.unshift(this.getBlockLatexRule())
@@ -405,6 +414,11 @@ class PreprocessService {
 
 		for (const rule of filteredRules) {
 			processedMarkdown = processedMarkdown.replace(rule.regex, rule.replace)
+		}
+
+		// 恢复表格中的美元符号（如果之前保护过）
+		if (tableProtectionMap.size > 0) {
+			processedMarkdown = this.restoreTableDollarSigns(processedMarkdown, tableProtectionMap)
 		}
 
 		// 最后修复所有可能的段落开头HTML标签问题
@@ -556,6 +570,63 @@ class PreprocessService {
 		})
 
 		return lines.join("\n")
+	}
+
+	/**
+	 * 保护表格中的美元符号，避免被 LaTeX 处理器误解析
+	 * @param markdown
+	 * @returns
+	 */
+	private protectTableDollarSigns(markdown: string): {
+		markdown: string
+		protectionMap: Map<string, string>
+	} {
+		const protectionMap = new Map<string, string>()
+		let protectedMarkdown = markdown
+
+		// 找到所有表格块
+		const tableMatches = markdown.matchAll(
+			/^\s*(\|[^\n]*\|)\s*\n\s*(\|[\s\-:|\s]*\|)\s*\n((?:\s*\|[^\n]*\|\s*(?:\n|$))*)/gm,
+		)
+
+		for (const match of tableMatches) {
+			const fullTable = match[0]
+			let protectedTable = fullTable
+
+			// 在这个表格中保护所有美元符号
+			const dollarMatches = fullTable.matchAll(/\$/g)
+			let offset = 0
+
+			for (const dollarMatch of dollarMatches) {
+				const placeholder = `__TABLE_DOLLAR_${protectionMap.size}__`
+				protectionMap.set(placeholder, "$")
+
+				const index = dollarMatch.index! + offset
+				protectedTable =
+					protectedTable.slice(0, index) + placeholder + protectedTable.slice(index + 1)
+				offset += placeholder.length - 1
+			}
+
+			protectedMarkdown = protectedMarkdown.replace(fullTable, protectedTable)
+		}
+
+		return { markdown: protectedMarkdown, protectionMap }
+	}
+
+	/**
+	 * 恢复表格中被保护的美元符号
+	 * @param markdown
+	 * @param protectionMap
+	 * @returns
+	 */
+	private restoreTableDollarSigns(markdown: string, protectionMap: Map<string, string>): string {
+		let restoredMarkdown = markdown
+
+		for (const [placeholder, original] of protectionMap) {
+			restoredMarkdown = restoredMarkdown.replace(new RegExp(placeholder, "g"), original)
+		}
+
+		return restoredMarkdown
 	}
 }
 

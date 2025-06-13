@@ -6,6 +6,76 @@ import { isArray, isObject } from "lodash-es"
 import { richTextNode } from "@/opensource/pages/chatNew/components/ChatMessageList/components/MessageFactory/components/RichText/schemaConfig"
 import { isValidBase64 } from "@/utils/encoding"
 
+// Valid image MIME types that should be treated as images
+export const VALID_IMAGE_TYPES = [
+	"image/jpeg",
+	"image/jpg",
+	"image/png",
+	"image/gif",
+	"image/webp",
+	"image/bmp",
+	"image/tiff",
+	"image/ico",
+	"image/heic",
+	"image/heif",
+	"image/avif",
+]
+
+// Non-image file types that may contain "image" in their MIME type
+export const NON_IMAGE_TYPES = [
+	"application/x-apple-diskimage", // .dmg files
+	"application/vnd.ms-outlook", // Outlook files
+]
+
+/**
+ * Check if a file is a valid image that should be processed as image
+ * @param file - File to check
+ * @returns true if the file is a valid image
+ */
+export function isValidImageFile(file: File): boolean {
+	// First check by file extension as fallback
+	const fileExtension = file.name.split(".").pop()?.toLowerCase()
+	const imageExtensions = [
+		"jpg",
+		"jpeg",
+		"png",
+		"gif",
+		"webp",
+		"bmp",
+		"tiff",
+		"ico",
+		"heic",
+		"heif",
+		"avif",
+	]
+
+	// If MIME type is explicitly in non-image types, treat as non-image
+	if (NON_IMAGE_TYPES.includes(file.type)) {
+		return false
+	}
+
+	// If MIME type is in valid image types, treat as image
+	if (VALID_IMAGE_TYPES.includes(file.type)) {
+		return true
+	}
+
+	// If no MIME type available, check by extension
+	if (!file.type && fileExtension && imageExtensions.includes(fileExtension)) {
+		return true
+	}
+
+	// For files with generic image MIME type, exclude SVG and other non-raster images
+	if (file.type.startsWith("image/") && file.type !== "image/svg+xml") {
+		// Additional check: if extension suggests it's not a raster image, treat as non-image
+		if (fileExtension === "dmg" || fileExtension === "iso" || fileExtension === "img") {
+			return false
+		}
+		return true
+	}
+
+	return false
+}
+
 /**
  * 递归遍历所有节点，获取所有节点的类型
  * @param data
