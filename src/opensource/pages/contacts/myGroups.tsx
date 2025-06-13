@@ -24,7 +24,7 @@ const MyGroups = observer(function MyGroups() {
 	const { styles } = useStyles()
 
 	// 使用状态管理数据和加载状态
-	const [data, setData] = useState<any>([])
+	const [data, setData] = useState<any>(undefined)
 	const [isLoading, setIsLoading] = useState(false)
 
 	// 初始加载和刷新函数
